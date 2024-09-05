@@ -21,124 +21,117 @@ def Cmd_RxUnpack(buf, DLen):
     scaleAirPressure = 0.0002384185791
     scaleHeight      = 0.0010728836
 
-    #print("rev data:",buf)
+    result = {}
+    
     if buf[0] == 0x11:
         ctl = (buf[2] << 8) | buf[1]
-        print("\n subscribe tag: 0x%04x"%ctl)
-        print(" ms: ", ((buf[6]<<24) | (buf[5]<<16) | (buf[4]<<8) | (buf[3]<<0)))
+        result['subscribe_tag'] = ctl
+        result['ms'] = ((buf[6] << 24) | (buf[5] << 16) | (buf[4] << 8) | buf[3])
 
-        L =7 # 从第7字节开始根据 订阅标识tag来解析剩下的数据
-        if ((ctl & 0x0001) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2 
-            print("\taX: %.3f"%tmpX); # x加速度aX
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2 
-            print("\taY: %.3f"%tmpY); # y加速度aY
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\taZ: %.3f"%tmpZ); # z加速度aZ        
-        if ((ctl & 0x0002) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tAX: %.3f"%tmpX) # x加速度AX
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tAY: %.3f"%tmpY) # y加速度AY
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tAZ: %.3f"%tmpZ) # z加速度AZ
+        L = 7  # 从第7字节开始根据订阅标识tag来解析剩下的数据
 
-        if ((ctl & 0x0004) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngleSpeed; L += 2 
-            print("\tGX: %.3f"%tmpX) # x角速度GX
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngleSpeed; L += 2 
-            print("\tGY: %.3f"%tmpY) # y角速度GY
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngleSpeed; L += 2
-            print("\tGZ: %.3f"%tmpZ) # z角速度GZ
+        if (ctl & 0x0001) != 0:
+            result['accel'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleAccel,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleAccel,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleAccel
+            }
+            L += 6
+
+        if (ctl & 0x0002) != 0:
+            result['gravity_accel'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleAccel,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleAccel,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleAccel
+            }
+            L += 6
+
+        if (ctl & 0x0004) != 0:
+            result['angle_accel'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleAngleSpeed,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleAngleSpeed,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleAngleSpeed
+            }
+            L += 6
+
+        if (ctl & 0x0008) != 0:
+            result['mag'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleMag,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleMag,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleMag
+            }
+            L += 6
+
+        if (ctl & 0x0010) != 0:
+            result['temperature'] = np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleTemperature
+            L += 2
+
+            air_pressure_raw = (buf[L+2] << 16) | (buf[L+1] << 8) | buf[L]
+            result['air_pressure'] = np.int32(air_pressure_raw) * scaleAirPressure
+            L += 3
+
+            height_raw = (buf[L+2] << 16) | (buf[L+1] << 8) | buf[L]
+            result['height'] = np.int32(height_raw) * scaleHeight
+            L += 3
+
+        if (ctl & 0x0020) != 0:
+            result['quaternion'] = {
+                'w': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleQuat,
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleQuat,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleQuat,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+6]) * scaleQuat
+            }
+            L += 8
+
+        if (ctl & 0x0040) != 0:
+            result['angle'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleAngle,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleAngle,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleAngle
+            }
+            L += 6
+
+        if (ctl & 0x0080) != 0:
+            result['offset'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) / 1000.0,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) / 1000.0,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) / 1000.0
+            }
+            L += 6
+
+        if (ctl & 0x0100) != 0:
+            result['steps'] = (buf[L+3] << 24) | (buf[L+2] << 16) | (buf[L+1] << 8) | buf[L]
+            L += 4
+
+            result['motion_status'] = {
+                'walking': bool(buf[L] & 0x01),
+                'running': bool(buf[L] & 0x02),
+                'biking': bool(buf[L] & 0x04),
+                'driving': bool(buf[L] & 0x08)
+            }
+            L += 1
+
+        if (ctl & 0x0200) != 0:
+            result['accel_stability'] = {
+                'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) * scaleAccel,
+                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) * scaleAccel,
+                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) * scaleAccel
+            }
+            L += 6
+
+        if (ctl & 0x0400) != 0:
+            result['adc'] = (buf[L+1] << 8) | buf[L]
+            L += 2
+
+        if (ctl & 0x0800) != 0:
+            result['GPIO1'] = {
+                'M': (buf[L] >> 4) & 0x0f,
+                'N': buf[L] & 0x0f
+            }
+            L += 1
         
-        if ((ctl & 0x0008) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleMag; L += 2
-            print("\tCX: %.3f"%tmpX); # x磁场CX
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleMag; L += 2
-            print("\tCY: %.3f"%tmpY); # y磁场CY
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleMag; L += 2
-            print("\tCZ: %.3f"%tmpZ); # z磁场CZ
-        
-        if ((ctl & 0x0010) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleTemperature; L += 2
-            print("\ttemperature: %.2f"%tmpX) # 温度
-
-            tmpU32 = np.uint32(((np.uint32(buf[L+2]) << 16) | (np.uint32(buf[L+1]) << 8) | np.uint32(buf[L])))
-            if ((tmpU32 & 0x800000) == 0x800000): # 若24位数的最高位为1则该数值为负数，需转为32位负数，直接补上ff即可
-                tmpU32 = (tmpU32 | 0xff000000)      
-            tmpY = np.int32(tmpU32) * scaleAirPressure; L += 3
-            print("\tairPressure: %.3f"%tmpY); # 气压
-
-            tmpU32 = np.uint32((np.uint32(buf[L+2]) << 16) | (np.uint32(buf[L+1]) << 8) | np.uint32(buf[L]))
-            if ((tmpU32 & 0x800000) == 0x800000): # 若24位数的最高位为1则该数值为负数，需转为32位负数，直接补上ff即可
-                tmpU32 = (tmpU32 | 0xff000000)
-            tmpZ = np.int32(tmpU32) * scaleHeight; L += 3 
-            print("\theight: %.3f"%tmpZ); # 高度
-
-        if ((ctl & 0x0020) != 0):
-            tmpAbs = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleQuat; L += 2
-            print("\tw: %.3f"%tmpAbs); # w
-            tmpX =   np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleQuat; L += 2
-            print("\tx: %.3f"%tmpX); # x
-            tmpY =   np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleQuat; L += 2
-            print("\ty: %.3f"%tmpY); # y
-            tmpZ =   np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleQuat; L += 2
-            print("\tz: %.3f"%tmpZ); # z
-
-        if ((ctl & 0x0040) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngle; L += 2
-            print("\tangleX: %.3f"%tmpX); # x角度
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngle; L += 2
-            print("\tangleY: %.3f"%tmpY); # y角度
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAngle; L += 2
-            print("\tangleZ: %.3f"%tmpZ); # z角度
-
-        if ((ctl & 0x0080) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) / 1000.0; L += 2
-            print("\toffsetX: %.3f"%tmpX); # x坐标
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) / 1000.0; L += 2
-            print("\toffsetY: %.3f"%tmpY); # y坐标
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) / 1000.0; L += 2
-            print("\toffsetZ: %.3f"%tmpZ); # z坐标
-
-        if ((ctl & 0x0100) != 0):
-            tmpU32 = ((buf[L+3]<<24) | (buf[L+2]<<16) | (buf[L+1]<<8) | (buf[L]<<0)); L += 4
-            print("\tsteps: %u"%tmpU32); # 计步数
-            tmpU8 = buf[L]; L += 1
-            if (tmpU8 & 0x01):# 是否在走路
-                print("\t walking yes")
-            else:
-                print("\t walking no")
-            if (tmpU8 & 0x02):# 是否在跑步
-                print("\t running yes")
-            else:
-                print("\t running no")
-            if (tmpU8 & 0x04):# 是否在骑车
-                print("\t biking yes")
-            else:
-                print("\t biking no")
-            if (tmpU8 & 0x08):# 是否在开车
-                print("\t driving yes")
-            else:
-                print("\t driving no")
-
-        if ((ctl & 0x0200) != 0):
-            tmpX = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tasX: %.3f"%tmpX); # x加速度asX
-            tmpY = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tasY: %.3f"%tmpY); # y加速度asY
-            tmpZ = np.short((np.short(buf[L+1])<<8) | buf[L]) * scaleAccel; L += 2
-            print("\tasZ: %.3f"%tmpZ); # z加速度asZ
-                    
-        if ((ctl & 0x0400) != 0):
-            tmpU16 = ((buf[L+1]<<8) | (buf[L]<<0)); L += 2
-            print("\tadc: %u"%tmpU16); # adc测量到的电压值，单位为mv
-
-        if ((ctl & 0x0800) != 0):
-            tmpU8 = buf[L]; L += 1
-            print("\t GPIO1  M:%X, N:%X"%((tmpU8>>4)&0x0f, (tmpU8)&0x0f))
-    else:
-        print("------data head not define")
+        return result
+    return None
 
 CmdPacket_Begin = 0x49   # 起始码
 CmdPacket_End = 0x4D     # 结束码
@@ -195,12 +188,11 @@ def Cmd_GetPkt(byte):
             buf[i] = byte
             i += 1
             hex_string = " ".join(f"{b:02X}" for b in buf[0:i])
-            print(f"U-Rx[Len={i}]:{hex_string}")
-            Cmd_RxUnpack(buf[3:i-2], i-5) # 处理数据包的数据体
-            return 1
+            # print(f"U-Rx[Len={i}]:{hex_string}")
+            return Cmd_RxUnpack(buf[3:i-2], i-5) # 处理数据包的数据体
     else:
         RxIndex = 0
-    return 0
+    return None
 
 def Cmd_PackAndTx(pDat, DLen):
     if DLen == 0 or DLen > 19:
@@ -252,10 +244,6 @@ def read_data():
     while True:
         data = ser.read(1) # read 1 bytes
         if len(data) > 0: # if data is not empty
-            Cmd_GetPkt(data[0])
-
-# Start reading data
-read_data()
-
+            yield Cmd_GetPkt(data[0])
 
 
