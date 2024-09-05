@@ -4,8 +4,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from imu import read_data
 
-matplotlib.use('TkAgg')
-plt.switch_backend('TkAgg')
 
 def process_data():
     # 初始化轨迹数据
@@ -15,7 +13,6 @@ def process_data():
 
     ax = fig.add_subplot(111, projection='3d')
 
-    # 处理每个传感器数据
     for data in read_data():
         if data is None: continue
         offset = data['offset']
@@ -39,7 +36,7 @@ def process_data():
 
         ax.clear()
         ax.plot([p[0] for p in positions], [p[1] for p in positions], [p[2] for p in positions])
-        plt.pause(1/100)
+        plt.pause(0.01)
 
     plt.ylim(0, 10)
     plt.show()
