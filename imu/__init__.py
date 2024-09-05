@@ -8,6 +8,7 @@ screw_plan = [
     { "x": 0.1, "y": 0.1 },
 ]
 
+simulate_screw_tightening = False
 
 def turningPreviousData(previous_data, data):
     if len(previous_data) > 9:
@@ -40,13 +41,14 @@ def accumulate_offset_to_position(offset, positions, standing):
     
     print("new_position: %.3f, %.3f, %.3f; offset: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2], offset['x'], offset['y'], offset['z']))
     positions.append(new_position)
+    return new_position
 
 last_trigger_time = 0
 # 2.判断是否符合拧螺丝要求
 def requirement_process(data, previous_data, positions):
     global screw_plan, last_trigger_time
     turningPreviousData(previous_data, data)
-    if len(previous_data) < 10: return
+    if len(previous_data) < 10: return False, False, False
     
     # 保持 X、Y 轴稳定
     xy_stable = all(abs(data['gravity_accel']['x']) < 1.5 and abs(data['gravity_accel']['y']) < 1.5 for data in previous_data)
@@ -54,6 +56,7 @@ def requirement_process(data, previous_data, positions):
     # 保持方向朝下
     aligned = abs(data['angle']['x']) < 25 and abs(data['angle']['y']) < 25
 
+    # 3.定位
     located = locateScrew(data, screw_plan[0], positions)
     print(f"located: {located}, xy_stable: {xy_stable}, aligned: {aligned}, screw_plan: {screw_plan[0]}, left: {len(screw_plan)}")
     if located and xy_stable and aligned:
@@ -67,6 +70,7 @@ def requirement_process(data, previous_data, positions):
                 if len(screw_plan) < 1:
                     print("done")
                     exit()
+    return located, xy_stable, aligned
 
 def parse_data():
     positions = [[0, 0, 0]]
@@ -78,7 +82,6 @@ def parse_data():
     # 处理 yield 数据
     for data in read_data():
         if data is None: continue
-        accumulate_offset_to_position(data['offset'], positions, standing)
-        requirement_process(data, previous_data, positions)
-
-
+        new_position = accumulate_offset_to_position(data['offset'], positions, standing)
+        located, xy_stable, aligned = requirement_process(data, previous_data, positions)
+        yield f"located: {located}, xy_stable: {xy_stable}, aligned: {aligned}, screw_plan: {screw_plan[0]}, left: {len(screw_plan)}\n"
