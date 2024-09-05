@@ -94,8 +94,8 @@ def Cmd_RxUnpack(buf, DLen):
         if (ctl & 0x0080) != 0:
             result['offset'] = {
                 'x': np.short((np.short(buf[L+1]) << 8) | buf[L]) / 1000.0,
-                'y': np.short((np.short(buf[L+1]) << 8) | buf[L+2]) / 1000.0,
-                'z': np.short((np.short(buf[L+1]) << 8) | buf[L+4]) / 1000.0
+                'y': np.short((np.short(buf[L+3]) << 8) | buf[L+2]) / 1000.0,
+                'z': np.short((np.short(buf[L+5]) << 8) | buf[L+4]) / 1000.0
             }
             L += 6
 

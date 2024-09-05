@@ -10,10 +10,7 @@ plt.switch_backend('TkAgg')
 def process_data():
     # 初始化轨迹数据
     positions = [[0, 0, 0]]
-    standing = {
-        'isStanding': True,
-        'position': [0, 0, 0]
-    }
+    standing = [0, 0, 0]
     fig = plt.figure()
 
     ax = fig.add_subplot(111, projection='3d')
@@ -22,26 +19,27 @@ def process_data():
     for data in read_data():
         if data is None: continue
         offset = data['offset']
-        print(offset, standing)
 
+        new_position = standing.copy()
 
-        if offset['x'] == 0 and offset['y'] == 0 and offset['z'] == 0:
-            # 静止
-            standing['isStanding'] = True
-            standing['position'] = positions[-1]
-            continue
+        if offset['x'] == 0:
+            standing[0] = positions[-1][0]
 
-        if standing['isStanding']:
-            standing['isStanding'] = False
-        positions.append([
-            standing['position'][0] + offset['x'],
-            standing['position'][1] + offset['y'],
-            0,
-        ])
+        if offset['y'] == 0:
+            standing[1] = positions[-1][1]
+
+        if offset['z'] == 0:
+            standing[2] = positions[-1][2]
+        
+        new_position[0] = standing[0] + offset['x']
+        new_position[1] = standing[1] + offset['y']
+        
+        print("new_position: %.3f, %.3f, %.3f; offset: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2], offset['x'], offset['y'], offset['z']))
+        positions.append(new_position)
 
         ax.clear()
         ax.plot([p[0] for p in positions], [p[1] for p in positions], [p[2] for p in positions])
-        plt.pause(0.03333)
+        plt.pause(1/100)
 
     plt.ylim(0, 10)
     plt.show()
