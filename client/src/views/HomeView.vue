@@ -85,6 +85,13 @@ const simulateScrewTightening = ()=> {
     simulateScrewTighteningState.value.loading = false;
     message.error(`模拟拧螺丝失败${err}`);
   });
-}
+};
+
+// 空格键
+window.addEventListener('keydown', (event) => {
+  if (event.code === 'Space') {
+    simulateScrewTightening();
+  }
+});
 
 </script>

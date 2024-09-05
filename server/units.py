@@ -1,7 +1,7 @@
 import os, json
 
 
-def res(app, data):
+def res(app, data={}):
     response = {}
     if isinstance(data, dict):
         response['code'] = data.pop("code", 200)

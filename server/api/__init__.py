@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, stream_with_context
 from server.units import res
-from imu import parse_data
+from imu import parse_data, simulate_screw_tightening_for_3s
 from imu.communication import z_axes_to_zero
 
 api_bp = Blueprint('api', __name__)
@@ -20,5 +20,5 @@ def start_moving():
 
 @api_bp.route('/simulate_screw_tightening')
 def simulate_screw_tightening():
-    
+    simulate_screw_tightening_for_3s()
     return res(current_app)
