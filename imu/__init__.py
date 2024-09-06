@@ -1,13 +1,8 @@
 import numpy as np
 from .communication import read_data
+import time, threading
 
-screw_plan = [
-    { "x": 0.1, "y": 0 },
-    { "x": 0.18, "y": 0 },
-    { "x": 0.18, "y": 0.1 },
-    { "x": 0.1, "y": 0.1 },
-]
-
+screw_plan = []
 
 def turningPreviousData(previous_data, data):
     if len(previous_data) > 9:
@@ -27,9 +22,13 @@ def locateScrew(data, plan, positions):
     return x_aligned and y_aligned
      
 inited = False
+init_position_manually = False
 def atInitialPosition(data):
     # 斜着放，即初始位置
-    global inited
+    global inited, init_position_manually
+    if init_position_manually:
+        init_position_manually = False
+        return True
     isStanding = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
     at_initial_position = isStanding and abs(data['angle']['y']+47)<7 and abs(data['angle']['x'])<20 and abs(data['angle']['z'])<20
     if not inited and at_initial_position:
@@ -60,7 +59,7 @@ screw_tightening = False
 def requirement_process(data, previous_data, positions):
     global screw_plan, last_trigger_time, screw_tightening, inited
     turningPreviousData(previous_data, data)
-    if len(previous_data) < 10: return False, False, False
+    if len(previous_data) < 10: return False
     
     # 保持 X、Y 轴稳定
     xy_stable = all(abs(data['gravity_accel']['x']) < 2 and abs(data['gravity_accel']['y']) < 2 for data in previous_data)
@@ -80,15 +79,14 @@ def requirement_process(data, previous_data, positions):
             inited = False
             if len(screw_plan) < 1:
                 print("done")
-                exit()
-    return located, xy_stable, aligned
+                return True
+    return False
 
 def parse_data():
     positions = [[0, 0, 0]]
     standing = [0, 0, 0]
 
     previous_data = []
-    last_trigger_time = 0
 
     # 处理 yield 数据
     for data in read_data():
@@ -98,11 +96,24 @@ def parse_data():
         if atInitialPosition(data): new_position = [0, 0, 0]
         print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
         positions.append(new_position)
-        located, xy_stable, aligned = requirement_process(data, previous_data, positions)
-        yield f"located: {located}, xy_stable: {xy_stable}, aligned: {aligned}, screw_plan: {screw_plan[0]}, left: {len(screw_plan)}\n"
+        ok = requirement_process(data, previous_data, positions)
+        if ok:
+            yield 'DONE'
+            break
+
+def start_moving_for(plan):
+    global screw_plan
+    screw_plan = plan
+    for text_snippet in parse_data():
+        yield text_snippet
 
 
 def simulate_screw_tightening_for_3s():
     global screw_tightening
     screw_tightening = not screw_tightening
     print(f"screw_tightening: {screw_tightening}")
+
+def desktop_coordinate_system_to_zero():
+    global init_position_manually
+    init_position_manually = True
+    

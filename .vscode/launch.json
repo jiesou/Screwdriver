@@ -15,6 +15,19 @@
             "type": "debugpy",
             "request": "launch",
             "module": "imu"
+        },
+        {
+            "command": "yarn dev",
+            "cwd": "${workspaceFolder}/client",
+            "name": "client",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+    ],
+    "compounds": [
+        {
+            "name": "fullstack",
+            "configurations": ["server", "client"]
         }
     ]
 }

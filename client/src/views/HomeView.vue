@@ -5,8 +5,9 @@
       :danger="startMovingState.danger">开始移动</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置 Z
       轴角</a-button>
+      <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading" :danger="resetDesktopCoordinateSystemState.danger">重置桌面坐标系</a-button>
       <a-button @click="simulateScrewTightening" :loading="simulateScrewTighteningState.loading" :danger="simulateScrewTighteningState.danger">模拟拧螺丝</a-button>
-  </a-space>
+    </a-space>
   <div>
     {{ log }}
   </div>
@@ -93,5 +94,20 @@ window.addEventListener('keydown', (event) => {
     simulateScrewTightening();
   }
 });
+
+const resetDesktopCoordinateSystemState = ref({
+  loading: false,
+  danger: null,
+});
+const resetDesktopCoordinateSystem = ()=> {
+  resetDesktopCoordinateSystemState.value.loading = true;
+  callApi('reset_desktop_coordinate_system').then(() => {
+    resetDesktopCoordinateSystemState.value.loading = false;
+    message.success('重置桌面坐标系成功');
+  }).catch(err => {
+    resetDesktopCoordinateSystemState.value.loading = false;
+    message.error(`重置桌面坐标系失败${err}`);
+  });
+};
 
 </script>

@@ -1,0 +1,6 @@
+pyserial
+numpy
+gatt
+dbus-python
+PyGObject
+flask
