@@ -6,6 +6,10 @@ https://blog.csdn.net/Yong_Qi2015/article/details/130002620
 摄像头绑螺丝刀上
 ## 9.6
 ### 蓝牙
+
+依赖项很多
 sudo dnf install pkgconf-pkg-config cairo-devel gcc python3-devel gobject-introspection-devel
 
 mac: 67:F8:1E:C8:D6:77
+
+用 devcontainer 管理依赖
