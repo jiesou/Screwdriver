@@ -4,7 +4,7 @@
 
 - `imu/`: IMU 相关的主要逻辑。
 
-- `client/`: 前端项目目录，使用 Vue 3 和 Vite。
+- `client/`: 前端项目目录，使用 Vue 3 和 Ant Design。
 
 - `server/`: 后端项目目录，使用 Flask。
 

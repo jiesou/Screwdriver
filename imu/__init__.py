@@ -37,10 +37,10 @@ def locateScrew(data, positions):
             (current_position[0] - screw['position']['x'])**2 +
             (current_position[1] - screw['position']['y'])**2
         )
-        quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
-        # 将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
-        combined_distance = space_distance + quaternion_offset * 0.1
-        print(f"index: %d, space_distance: %.3f, quaternion_offset: %.3f, combined_distance: %.3f" % (screw_map.index(screw), space_distance, quaternion_offset, combined_distance))
+        # quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
+        # TODO: 依据四元数计算角度偏差，并将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
+        combined_distance = space_distance
+        print(f"index: %d, space_distance: %.3f, combined_distance: %.3f" % (screw_map.index(screw), space_distance, combined_distance))
         if combined_distance < min_combined_distance:
             min_combined_distance = combined_distance
             closest_screw = screw
