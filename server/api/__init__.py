@@ -15,11 +15,10 @@ def start_moving():
     def stream():
         yield ""
         for text_snippet in start_moving_for([
-            {"position": {"x": 0.2, "y": 0}, "quaternion": {"x": 0, "y": 0}},
-            {"position": {"x": 0.3, "y": 0}, "quaternion": {"x": 0, "y": 0}},
-            {"position": {"x": 0.3, "y": 0.2}, "quaternion": {"x": 0, "y": 0}},
-            {"position": {"x": 0.2, "y": 0.2}, "quaternion": {"x": 0, "y": 0}},
-            {"position": {"x": 0.2, "y": 0.2}, "quaternion": {"x": 90, "y": 0}}
+            {"tag": 0, "position": {"x": 0.2, "y": 0}, "quaternion": {"x": 0, "y": 0}},
+            {"tag": 1, "position": {"x": 0.3, "y": 0}, "quaternion": {"x": 0, "y": 0}},
+            {"tag": 2, "position": {"x": 0.3, "y": 0.2}, "quaternion": {"x": 0, "y": 0}},
+            {"tag": 3, "position": {"x": 0.2, "y": 0.2}, "quaternion": {"x": 0, "y": 0}}
         ]):
             yield text_snippet
     return stream_with_context(stream())

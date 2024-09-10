@@ -27,11 +27,13 @@ def isSameSign(a, b):
     if a == 0 and b == 0: return True
     return a * b > 0
 
+closest_screw_index = 0
 def locateScrew(data, positions):
-    if len(positions) < 2: return False
+    global closest_screw_index
+    if len(positions) < 2: return
     current_position = positions[-1]
-    min_combined_distance = float('inf')
-    closest_screw = None
+    current_min_combined_distance = float('inf')
+    current_closest_screw = None
     for screw in screw_map:
         space_distance = np.sqrt(
             (current_position[0] - screw['position']['x'])**2 +
@@ -40,18 +42,16 @@ def locateScrew(data, positions):
         # quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
         # TODO: 依据四元数计算角度偏差，并将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
         combined_distance = space_distance
-        print(f"index: %d, space_distance: %.3f, combined_distance: %.3f" % (screw_map.index(screw), space_distance, combined_distance))
-        if combined_distance < min_combined_distance:
-            min_combined_distance = combined_distance
-            closest_screw = screw
-    if closest_screw is not None:
-        index = screw_map.index(closest_screw)
-        print(f"closest_screw: {closest_screw}, index: {index}")
-        x_aligned = isSameSign(current_position[0], closest_screw['position']['x'])
-        y_aligned = isSameSign(current_position[1], closest_screw['position']['y'])
-        if x_aligned and y_aligned:
-            return index
-    return False
+        print(f"tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
+        if combined_distance < current_min_combined_distance:
+            current_min_combined_distance = combined_distance
+            current_closest_screw = screw
+    # 兜底，如果当前位置与最近螺丝的位置在同一 X 方向，才认为定位成功，避免只有一个螺丝时的判断问题
+    x_aligned = isSameSign(current_position[0], current_closest_screw['position']['x'])
+    if x_aligned:
+        closest_screw_index = screw_map.index(current_closest_screw)
+    print(f"closest_screw: {current_closest_screw}")
+    return closest_screw_index
      
 inited = False
 init_position_manually = False
@@ -62,10 +62,10 @@ def atInitialPosition(data):
         init_position_manually = False
         return True
     isStanding = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
-    at_initial_position = isStanding and abs(data['angle']['y']+47)<7 and abs(data['angle']['x'])<20 and abs(data['angle']['z'])<20
-    if not inited and at_initial_position:
+    isStateValid = isStanding and abs(data['angle']['y']+52)<7 and abs(data['angle']['x'])<20 and abs(data['angle']['z'])<20
+    if not inited and isStateValid:
         inited = True
-    return at_initial_position
+    return isStateValid
 
 
 
@@ -96,14 +96,14 @@ def requirement_process(data, previous_data, positions):
     # 保持 X、Y 轴稳定
     xy_stable = all(abs(data['gravity_accel']['x']) < 2 and abs(data['gravity_accel']['y']) < 2 for data in previous_data)
 
-    # 3.定位
-    located_index = locateScrew(data, positions)
-    print(f"located: {located_index}, xy_stable: {xy_stable}, left: {len(screw_map)}")
-    if located_index and xy_stable:
+    if xy_stable:
+        # 3.定位
+        locateScrew(data, positions)
+        print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
         # 每次拧螺丝只有重置后才能再次拧
         if screw_tightening and inited:
             # 4. 拧螺丝
-            screw_map.pop(located_index)
+            screw_map.pop(closest_screw_index)
             print(f"screwd, {len(screw_map)} left")
             inited = False
             if len(screw_map) < 1:
