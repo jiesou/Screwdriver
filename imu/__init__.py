@@ -42,7 +42,7 @@ def locateScrew(data, positions):
         # quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
         # TODO: 依据四元数计算角度偏差，并将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
         combined_distance = space_distance
-        print(f"tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
+        # print(f"tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
         if combined_distance < current_min_combined_distance:
             current_min_combined_distance = combined_distance
             current_closest_screw = screw
@@ -50,8 +50,37 @@ def locateScrew(data, positions):
     x_aligned = isSameSign(current_position[0], current_closest_screw['position']['x'])
     if x_aligned:
         closest_screw_index = screw_map.index(current_closest_screw)
-    print(f"closest_screw: {current_closest_screw}")
+    # print(f"closest_screw: {current_closest_screw}")
     return closest_screw_index
+
+# 侦测到突变后，记录缓反次数，持续 10 次缓返，认为拧螺丝
+angle_z_decreased = False
+def isScrewTightening(previous_data):
+    global screw_tightening, angle_z_decreased
+    angle_z_history = [data['angle']['z'] for data in previous_data]
+
+    screw_tightening = False
+    if type(angle_z_decreased) == int:
+        print(angle_z_history[-1] - angle_z_history[-2])
+        if 0 < angle_z_history[-1] - angle_z_history[-2] < 1.5:
+            angle_z_decreased += 1
+        else:
+            angle_z_decreased -= 1
+        print(f"angle_z_decreased: {angle_z_decreased}")
+        if angle_z_decreased > 10:
+            screw_tightening = True
+            angle_z_decreased = False
+            print("Detected screw tightening.")
+        if angle_z_decreased < -2:
+            screw_tightening = False
+            angle_z_decreased = False
+    # 取过去 3 次的中位数作为突变判断的基准
+    median_angle_z = np.median(angle_z_history[-6:-3])
+    if -12<previous_data[-1]['angle']['z']-median_angle_z<-4:
+        angle_z_decreased = 0
+        print("Detected screw tightening: angle['z'] increased significantly.")
+
+    return screw_tightening
      
 inited = False
 init_position_manually = False
@@ -66,7 +95,6 @@ def atInitialPosition(data):
     if not inited and isStateValid:
         inited = True
     return isStateValid
-
 
 
 
@@ -93,16 +121,19 @@ def requirement_process(data, previous_data, positions):
     turningPreviousData(previous_data, data)
     if len(previous_data) < 10: return False
     
+    # 3. 记录分析拧螺丝状态
+    isScrewTightening(previous_data)
+
     # 保持 X、Y 轴稳定
     xy_stable = all(abs(data['gravity_accel']['x']) < 2 and abs(data['gravity_accel']['y']) < 2 for data in previous_data)
 
     if xy_stable:
-        # 3.定位
+        # 4.定位
         locateScrew(data, positions)
-        print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
+        # print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
         # 每次拧螺丝只有重置后才能再次拧
         if screw_tightening and inited:
-            # 4. 拧螺丝
+            # 5. 拧螺丝
             screw_map.pop(closest_screw_index)
             print(f"screwd, {len(screw_map)} left")
             inited = False
@@ -128,7 +159,7 @@ def parse_data():
             # writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
             # 初始位置重置坐标系
             if atInitialPosition(data): new_position = [0, 0, 0]
-            print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
+            # print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
             positions.append(new_position)
             ok = requirement_process(data, previous_data, positions)
             if ok:
