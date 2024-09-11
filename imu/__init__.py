@@ -79,18 +79,18 @@ def isScrewTightening(previous_data):
         else:
             angle_z_recovered_times -= 1
             print(f"angle_z_decreased: {angle_z_recovered_times}")
-        if angle_z_recovered_times > 3:
+        if angle_z_recovered_times > 6:
             screw_tightening = True
             angle_z_recovered_times = False
-            print("Detected screw tightening.")
+            print("Detected screw tightening.！！！！！！！！！！！！！！！！")
         if angle_z_recovered_times < -1:
             screw_tightening = False
             angle_z_recovered_times = False
     # 取过去 3 次的中位数作为突变判断的基准
     median_angle_z = np.median(angle_z_history[-6:-3])
-    if -12 < previous_data[-1]['angle']['z']-median_angle_z < -4:
+    if -10 < previous_data[-1]['angle']['z']-median_angle_z < -5:
         angle_z_recovered_times = 0
-        print("Detected screw tightening: angle['z'] increased significantly.")
+        print("angle['z'] increased significantly.")
 
     return screw_tightening
 
