@@ -1,6 +1,8 @@
 import numpy as np
 from .communication import read_data
-import time, threading, csv
+import time
+import threading
+import csv
 
 """
 The data structure for the `map` variable is a list of dictionaries. Each dictionary represents a screw and contains the following keys:
@@ -18,16 +20,22 @@ Example:
 """
 screw_map = []
 
+
 def turningPreviousData(previous_data, data):
     if len(previous_data) > 9:
         previous_data.pop(0)
     previous_data.append(data)
 
+
 def isSameSign(a, b):
-    if a == 0 and b == 0: return True
+    if a == 0 and b == 0:
+        return True
     return a * b > 0
 
+
 closest_screw_index = 0
+
+
 def locateScrew(data, positions):
     global closest_screw_index
     if len(positions) < 2: return
@@ -42,7 +50,7 @@ def locateScrew(data, positions):
         # quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
         # TODO: 依据四元数计算角度偏差，并将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
         combined_distance = space_distance
-        print(f"tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
+        print(f"SCREW: tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
         if combined_distance < current_min_combined_distance:
             current_min_combined_distance = combined_distance
             current_closest_screw = screw
@@ -52,7 +60,40 @@ def locateScrew(data, positions):
         closest_screw_index = screw_map.index(current_closest_screw)
     print(f"closest_screw: {current_closest_screw}")
     return closest_screw_index
-     
+
+# 侦测到突变后，记录缓反次数，持续 10 次缓返，认为拧螺丝
+angle_z_recovered_times = False
+def isScrewTightening(previous_data):
+    global screw_tightening, angle_z_recovered_times
+    angle_z_history = [data['angle']['z'] for data in previous_data]
+
+    screw_tightening = False
+    if type(angle_z_recovered_times) == int:
+        offset = angle_z_history[-1] - angle_z_history[-2]
+        print(f"offset: {offset}")
+        if offset == 0:
+            pass
+        elif 0 < offset < 4:
+            angle_z_recovered_times += 1
+            print(f"angle_z_decreased: {angle_z_recovered_times}")
+        else:
+            angle_z_recovered_times -= 1
+            print(f"angle_z_decreased: {angle_z_recovered_times}")
+        if angle_z_recovered_times > 6:
+            screw_tightening = True
+            angle_z_recovered_times = False
+            print("Detected screw tightening.！！！！！！！！！！！！！！！！")
+        if angle_z_recovered_times < -1:
+            screw_tightening = False
+            angle_z_recovered_times = False
+    # 取过去 3 次的中位数作为突变判断的基准
+    median_angle_z = np.median(angle_z_history[-6:-3])
+    if -10 < previous_data[-1]['angle']['z']-median_angle_z < -5:
+        angle_z_recovered_times = 0
+        print("angle['z'] increased significantly.")
+
+    return screw_tightening
+
 inited = False
 init_position_manually = False
 def atInitialPosition(data):
@@ -62,11 +103,10 @@ def atInitialPosition(data):
         init_position_manually = False
         return True
     isStanding = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
-    isStateValid = isStanding and abs(data['angle']['y']+52)<7 and abs(data['angle']['x'])<20 and abs(data['angle']['z'])<20
+    isStateValid = isStanding and abs(data['angle']['y']+52) < 7 and abs(data['angle']['x']) < 20 and abs(data['angle']['z']) < 20
     if not inited and isStateValid:
         inited = True
     return isStateValid
-
 
 
 
@@ -79,10 +119,10 @@ def accumulate_offset_to_position(offset, positions, standing):
 
     if offset['y'] == 0:
         standing[1] = positions[-1][1]
-    
+
     new_position[0] = standing[0] + offset['x']
     new_position[1] = standing[1] + offset['y']
-    
+
     return new_position
 
 last_trigger_time = 0
@@ -93,22 +133,21 @@ def requirement_process(data, previous_data, positions):
     turningPreviousData(previous_data, data)
     if len(previous_data) < 10: return False
     
-    # 保持 X、Y 轴稳定
-    xy_stable = all(abs(data['gravity_accel']['x']) < 2 and abs(data['gravity_accel']['y']) < 2 for data in previous_data)
+    # 3. 记录分析拧螺丝状态
+    isScrewTightening(previous_data)
 
-    if xy_stable:
-        # 3.定位
-        locateScrew(data, positions)
-        print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
-        # 每次拧螺丝只有重置后才能再次拧
-        if screw_tightening and inited:
-            # 4. 拧螺丝
-            screw_map.pop(closest_screw_index)
-            print(f"screwd, {len(screw_map)} left")
-            inited = False
-            if len(screw_map) < 1:
-                print("done")
-                return True
+    # 4.定位
+    locateScrew(data, positions)
+    print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
+    # 每次拧螺丝只有重置后才能再次拧
+    if screw_tightening and inited:
+        # 5. 拧螺丝
+        screw_map.pop(closest_screw_index)
+        print(f"screwd, {len(screw_map)} left")
+        inited = False
+        if len(screw_map) < 1:
+            print("done")
+            return True
     return False
 
 def parse_data():
@@ -121,13 +160,15 @@ def parse_data():
     with open(filename, 'w', newline='') as csvfile:
         # 记录在 csv 中
         writer = csv.writer(csvfile)
-        writer.writerow(['position_x', 'position_y', 'offset_x', 'offset_y', 'offset_z', 'angle_x', 'angle_y', 'angle_z', 'gravity_accel_x', 'gravity_accel_y', 'gravity_accel_z'])
+        writer.writerow(['position_x', 'position_y', 'offset_x', 'offset_y', 'offset_z', 'angle_x',
+                        'angle_y', 'angle_z', 'gravity_accel_x', 'gravity_accel_y', 'gravity_accel_z'])
         for data in read_data():
             if data is None: continue
             new_position = accumulate_offset_to_position(data['offset'], positions, standing)
-            # writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
+            writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
             # 初始位置重置坐标系
-            if atInitialPosition(data): new_position = [0, 0, 0]
+            if atInitialPosition(data):
+                new_position = [0, 0, 0]
             print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
             positions.append(new_position)
             ok = requirement_process(data, previous_data, positions)
@@ -147,7 +188,7 @@ def simulate_screw_tightening_for_3s():
     screw_tightening = not screw_tightening
     print(f"screw_tightening: {screw_tightening}")
 
+
 def desktop_coordinate_system_to_zero():
     global init_position_manually
     init_position_manually = True
-    
