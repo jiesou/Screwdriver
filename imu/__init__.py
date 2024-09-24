@@ -1,7 +1,6 @@
 import numpy as np
 from .communication import read_data
 import time
-import threading
 import csv
 
 """
@@ -32,34 +31,34 @@ def isSameSign(a, b):
         return True
     return a * b > 0
 
+# 从大 map 中找在 offset 的范围内 覆盖到了 的螺丝
+def filterScrewsinRange(screw_map, position):
+    filtered_map = []
+    for screw in screw_map:
+        space_distance = np.sqrt(
+            (position[0] - screw['position']['x'])**2 +
+            (position[1] - screw['position']['y'])**2
+        )
+        if space_distance < screw['position']['offset']:
+            filtered_map.append(screw)
+    return filtered_map
 
-closest_screw_index = 0
-
-
-def locateScrew(data, positions):
-    global closest_screw_index
-    if len(positions) < 2: return
-    current_position = positions[-1]
+# 在过滤后的 map 中找到 最近 的螺丝
+def locateScrew(screw_map, position):
     current_min_combined_distance = float('inf')
     current_closest_screw = None
     for screw in screw_map:
         space_distance = np.sqrt(
-            (current_position[0] - screw['position']['x'])**2 +
-            (current_position[1] - screw['position']['y'])**2
+            (position[0] - screw['position']['x'])**2 +
+            (position[1] - screw['position']['y'])**2
         )
-        # quaternion_offset = abs(data['quaternion']['x'] - screw['quaternion']['x']) + abs(data['quaternion']['y'] - screw['quaternion']['y'])
-        # TODO: 依据四元数计算角度偏差，并将空间距离和四元数角度偏差结合起来，得到当前态势与 map 中各颗螺丝的综合偏差
         combined_distance = space_distance
         print(f"SCREW: tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
         if combined_distance < current_min_combined_distance:
             current_min_combined_distance = combined_distance
             current_closest_screw = screw
-    # 兜底，如果当前位置与最近螺丝的位置在同一 X 方向，才认为定位成功，避免只有一个螺丝时的判断问题
-    x_aligned = isSameSign(current_position[0], current_closest_screw['position']['x'])
-    if x_aligned:
-        closest_screw_index = screw_map.index(current_closest_screw)
-    print(f"closest_screw: {current_closest_screw}")
-    return closest_screw_index
+    # 返回最近的螺丝和距离
+    return current_closest_screw
 
 # 侦测到突变后，记录缓反次数，持续 10 次缓返，认为拧螺丝
 angle_z_recovered_times = False
@@ -80,7 +79,7 @@ def isScrewTightening(previous_data):
             angle_z_recovered_times -= 1
             print(f"angle_z_decreased: {angle_z_recovered_times}")
         if angle_z_recovered_times > 6:
-            screw_tightening = True
+            # screw_tightening = True
             angle_z_recovered_times = False
             print("Detected screw tightening.！！！！！！！！！！！！！！！！")
         if angle_z_recovered_times < -1:
@@ -103,7 +102,7 @@ def atInitialPosition(data):
         init_position_manually = False
         return True
     isStanding = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
-    isStateValid = isStanding and abs(data['angle']['y']+52) < 7 and abs(data['angle']['x']) < 20 and abs(data['angle']['z']) < 20
+    isStateValid = isStanding and abs(data['angle']['y']+50) < 7 and abs(data['angle']['x']) < 20 and abs(data['angle']['z']) < 20
     if not inited and isStateValid:
         inited = True
     return isStateValid
@@ -136,13 +135,16 @@ def requirement_process(data, previous_data, positions):
     # 3. 记录分析拧螺丝状态
     isScrewTightening(previous_data)
 
+    filtered_screw_map = filterScrewsinRange(screw_map, positions[-1])
+
     # 4.定位
-    locateScrew(data, positions)
-    print(f"located: {closest_screw_index}, screw_tightening: {screw_tightening}")
+    closest_screw = locateScrew(filtered_screw_map, positions[-1])
+
+    print(f"located: {closest_screw}")
     # 每次拧螺丝只有重置后才能再次拧
     if screw_tightening and inited:
         # 5. 拧螺丝
-        screw_map.pop(closest_screw_index)
+        screw_map.pop(screw_map.index(closest_screw))
         print(f"screwd, {len(screw_map)} left")
         inited = False
         if len(screw_map) < 1:
@@ -171,7 +173,9 @@ def parse_data():
                 new_position = [0, 0, 0]
             print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
             positions.append(new_position)
+
             ok = requirement_process(data, previous_data, positions)
+
             if ok:
                 yield 'DONE'
                 break
