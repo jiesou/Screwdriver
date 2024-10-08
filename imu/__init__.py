@@ -162,12 +162,13 @@ def parse_data():
     with open(filename, 'w', newline='') as csvfile:
         # 记录在 csv 中
         writer = csv.writer(csvfile)
-        writer.writerow(['position_x', 'position_y', 'offset_x', 'offset_y', 'offset_z', 'angle_x',
-                        'angle_y', 'angle_z', 'gravity_accel_x', 'gravity_accel_y', 'gravity_accel_z'])
+        writer.writerow(['position_x', 'position_y', 'offset_x', 'offset_y', 'offset_z', 'angle_x', 'angle_y', 'angle_z', 'angle_accel_x', 'angle_accel_y', 'angle_accel_z',
+                        'gravity_accel_x', 'gravity_accel_y', 'gravity_accel_z'])
         for data in read_data():
             if data is None: continue
             new_position = accumulate_offset_to_position(data['offset'], positions, standing)
-            writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
+            writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['angle_accel']['x'], data['angle_accel']['y'], data['angle_accel']['z'],
+                             data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
             # 初始位置重置坐标系
             if atInitialPosition(data):
                 new_position = [0, 0, 0]

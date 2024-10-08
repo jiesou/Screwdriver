@@ -4,3 +4,4 @@ gatt
 dbus-python
 PyGObject
 flask
+flask_cors

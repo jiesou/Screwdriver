@@ -1,13 +1,13 @@
 <template>
   <h1>Dash</h1>
-  <a-space>
+  <a-flex gap="large" wrap="wrap">
     <a-button type="primary" @click="handleStartMoving" :loading="startMovingState.loading"
       :danger="startMovingState.danger">开始移动</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置 Z
       轴角</a-button>
       <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading" :danger="resetDesktopCoordinateSystemState.danger">重置桌面坐标系</a-button>
       <a-button @click="simulateScrewTightening" :loading="simulateScrewTighteningState.loading" :danger="simulateScrewTighteningState.danger">模拟拧螺丝</a-button>
-    </a-space>
+    </a-flex>
   <div>
     {{ log }}
   </div>
