@@ -62,7 +62,7 @@ class AnyDevice(gatt.Device):
         Cmd_ReportTag = 0x0FFF  # 功能订阅标识
         params = bytearray([0x00 for i in range(0, 11)])
         params[0] = 0x12
-        params[1] = 1  # 静止状态加速度阀值
+        params[1] = 5  # 静止状态加速度阀值
         params[2] = 255  # 静止归零速度(单位cm/s) 0:不归零 255:立即归零
         params[3] = 0  # 动态归零速度(单位cm/s) 0:不归零
         params[4] = ((barometerFilter & 3) << 1) | (isCompassOn & 1)

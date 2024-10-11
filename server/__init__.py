@@ -1,7 +1,6 @@
 from flask import Flask, send_from_directory, stream_with_context, request, g
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import HTTPException
-import os
 from .units import res
 from .api import api_bp
 

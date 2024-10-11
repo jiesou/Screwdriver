@@ -1,3 +1,4 @@
+import json
 import numpy as np
 from .communication import read_data
 import time
@@ -17,7 +18,12 @@ Example:
     },
     ...
 """
-screw_map = []
+screw_map = [
+    {"tag": 0, "position": {"x": -0.5, "y": -0.5, "offset": 0.2},
+        "quaternion": {"x": 0, "y": 0}, "status": "waiting"},
+    {"tag": 1, "position": {"x": 1.5, "y": 0, "offset": 0.2},
+        "quaternion": {"x": 0, "y": 0}, "status": "waiting"}
+]
 
 
 def turningPreviousData(previous_data, data):
@@ -138,19 +144,20 @@ def requirement_process(data, previous_data, positions):
     filtered_screw_map = filterScrewsinRange(screw_map, positions[-1])
 
     # 4.定位
-    closest_screw = locateScrew(filtered_screw_map, positions[-1])
+    located_screw = locateScrew(filtered_screw_map, positions[-1])
 
-    print(f"located: {closest_screw}")
     # 每次拧螺丝只有重置后才能再次拧
     if screw_tightening and inited:
         # 5. 拧螺丝
-        screw_map.pop(screw_map.index(closest_screw))
+        screw_map.pop(screw_map.index(located_screw))
         print(f"screwd, {len(screw_map)} left")
         inited = False
         if len(screw_map) < 1:
             print("done")
-            return True
-    return False
+
+    return {
+        "located_screw": located_screw
+    }
 
 def parse_data():
     positions = [[0, 0, 0]]
@@ -175,25 +182,32 @@ def parse_data():
             print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
             positions.append(new_position)
 
-            ok = requirement_process(data, previous_data, positions)
+            state = requirement_process(data, previous_data, positions)
 
-            if ok:
-                yield 'DONE'
-                break
-
-def start_moving_for(map):
-    global screw_map
-    screw_map = map
-    for text_snippet in parse_data():
-        yield text_snippet
-
-
-def simulate_screw_tightening_for_3s():
-    global screw_tightening
-    screw_tightening = not screw_tightening
-    print(f"screw_tightening: {screw_tightening}")
+            yield {
+                "position": new_position,
+                "located_screw": state['located_screw'] if state else None,
+                "offset": data['offset'],
+                "angle": data['angle'],
+                "angle_accel": data['angle_accel'],
+                "gravity_accel": data['gravity_accel'],
+            }
 
 
-def desktop_coordinate_system_to_zero():
-    global init_position_manually
-    init_position_manually = True
+class api:
+    def handle_start_moving():
+        for state in parse_data():
+            yield json.dumps(state)
+
+    def handle_simulate_screw_tightening():
+        global screw_tightening
+        screw_tightening = not screw_tightening
+        print(f"screw_tightening: {screw_tightening}")
+
+
+    def handle_reset_desktop_coordinate_system():
+        global init_position_manually
+        init_position_manually = True
+
+    def handle_screw_data():
+        return json.dumps(screw_map)

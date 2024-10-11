@@ -1,6 +1,7 @@
+import time
 from flask import Blueprint, current_app, stream_with_context
 from server.units import res
-from imu import start_moving_for, simulate_screw_tightening_for_3s, desktop_coordinate_system_to_zero
+from imu import api as imu
 from imu.communication import z_axes_to_zero
 
 api_bp = Blueprint('api', __name__)
@@ -14,20 +15,27 @@ def reset_z_axes():
 def start_moving():
     def stream():
         yield ""
-        for text_snippet in start_moving_for([
-            {"tag": 0, "position": {"x": -0.5, "y": -0.5, "offset": 0.2}, "quaternion": {"x": 0, "y": 0}},
-            {"tag": 1, "position": {"x": 1.5, "y": 0, "offset": 0.2}, "quaternion": {"x": 0, "y": 0}}
-        ]):
-            yield text_snippet
+        for text_snippet in imu.handle_start_moving():
+            yield (text_snippet + "\n")
     return stream_with_context(stream())
 
 @api_bp.route('/simulate_screw_tightening')
 def simulate_screw_tightening():
-    simulate_screw_tightening_for_3s()
+    imu.handle_simulate_screw_tightening()
     return res(current_app)
 
 
 @api_bp.route('/reset_desktop_coordinate_system')
 def reset_desktop_coordinate_system():
-    desktop_coordinate_system_to_zero()
+    imu.handle_reset_desktop_coordinate_system()
     return res(current_app)
+
+@api_bp.route('/screw_data')
+def screw_data():
+    def stream():
+        yield ""
+        while True:
+            text_snippet = imu.handle_screw_data()
+            yield text_snippet + "\n"
+            time.sleep(1)
+    return stream_with_context(stream())
