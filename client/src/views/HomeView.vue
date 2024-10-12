@@ -16,7 +16,7 @@
     <a-typography-title :level="3" style="color: green;">
       {{ stateText }}
     </a-typography-title>
-    <ScrewMap :state="state" />
+    <ScrewMap :state="state" ref="screwMapRef" />
   </div>
 </template>
 
@@ -27,6 +27,7 @@ import { callApi } from '@/units/api'
 
 import ScrewMap from '@/components/ScrewMap.vue';
 
+const screwMapRef = ref(null)
 const stateText = ref('等待操作')
 const state = ref({})
 
@@ -51,6 +52,7 @@ const startMovingState = ref({
 })
 const handleStartMoving = () => {
   startMovingState.value.loading = true
+  screwMapRef.value.fetchData()
   callApi('start_moving')
     .then(response => {
       const reader = response.body.getReader()
@@ -74,10 +76,9 @@ const handleStartMoving = () => {
                 try {
                 state.value = JSON.parse(part)
                 stateText.value = `
-                  X: ${state.value.position[0].toFixed(3)}
-                  Y: ${state.value.position[1].toFixed(3)}
-                  Z: ${state.value.position[2].toFixed(3)}
-                `
+                  X: ${(state.value.position[0]*100).toFixed(1)} cm
+                  Y: ${(state.value.position[1]*100).toFixed(1)} cm
+                  `
               } catch (err) {
                 console.error('JSON 解析错误:', err)
               }

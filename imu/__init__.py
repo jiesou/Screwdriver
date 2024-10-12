@@ -3,6 +3,7 @@ import numpy as np
 from .communication import read_data
 import time
 import csv
+import copy
 
 """
 The data structure for the `map` variable is a list of dictionaries. Each dictionary represents a screw and contains the following keys:
@@ -18,12 +19,16 @@ Example:
     },
     ...
 """
-screw_map = [
-    {"tag": 0, "position": {"x": -0.5, "y": -0.5, "offset": 0.2},
-        "quaternion": {"x": 0, "y": 0}, "status": "waiting"},
-    {"tag": 1, "position": {"x": 1.5, "y": 0, "offset": 0.2},
-        "quaternion": {"x": 0, "y": 0}, "status": "waiting"}
+screw_map_input = [
+    {"tag": "左", "position": {"x": 0.2, "y": 0.1, "offset": 0.07},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
+    {"tag": "中", "position": {"x": 0.3, "y": 0.1, "offset": 0.1},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
+    {"tag": "右", "position": {"x": 0.5, "y": 0.1, "offset": 0.1},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
 ]
+
+screw_map = screw_map_input.copy()
 
 
 def turningPreviousData(previous_data, data):
@@ -59,7 +64,7 @@ def locateScrew(screw_map, position):
             (position[1] - screw['position']['y'])**2
         )
         combined_distance = space_distance
-        print(f"SCREW: tag: %d, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
+        print(f"SCREW: tag: %s, space_distance: %.3f, combined_distance: %.3f" % (screw['tag'], space_distance, combined_distance))
         if combined_distance < current_min_combined_distance:
             current_min_combined_distance = combined_distance
             current_closest_screw = screw
@@ -135,6 +140,8 @@ screw_tightening = False
 # 2.判断是否符合拧螺丝要求
 def requirement_process(data, previous_data, positions):
     global screw_map, last_trigger_time, screw_tightening, inited
+    screw_map = copy.deepcopy(screw_map_input)
+    print(screw_map_input)
     turningPreviousData(previous_data, data)
     if len(previous_data) < 10: return False
     
@@ -146,6 +153,7 @@ def requirement_process(data, previous_data, positions):
     # 4.定位
     located_screw = locateScrew(filtered_screw_map, positions[-1])
 
+    if located_screw: located_screw['status'] = "已定位"
     # 每次拧螺丝只有重置后才能再次拧
     if screw_tightening and inited:
         # 5. 拧螺丝
@@ -179,7 +187,6 @@ def parse_data():
             # 初始位置重置坐标系
             if atInitialPosition(data):
                 new_position = [0, 0, 0]
-            print("new_position: %.3f, %.3f, %.3f" % (new_position[0], new_position[1], new_position[2]))
             positions.append(new_position)
 
             state = requirement_process(data, previous_data, positions)

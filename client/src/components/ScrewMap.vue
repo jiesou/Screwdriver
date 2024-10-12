@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { message } from 'ant-design-vue'
 import { callApi } from '@/units/api'
 
@@ -15,11 +15,11 @@ const props = defineProps({
 const data = ref([])
 
 const columns = [
-    { title: '螺丝（范围）序号', dataIndex: 'tag', key: 'tag' },
+    { title: '序号', dataIndex: 'tag', key: 'tag' },
     { title: '动作状态', dataIndex: 'status', key: 'status' },
     { title: 'X位置', dataIndex: ['position', 'x'], key: 'x', customRender: ({ text }) => `${text * 100} cm`},
     { title: 'Y位置', dataIndex: ['position', 'y'], key: 'y', customRender: ({ text }) => `${text * 100} cm`},
-    { title: '允许误差', dataIndex: ['position', 'offset'], key: 'offset', customRender: ({ text }) => `${text * 100} cm`}
+    { title: '允许偏差', dataIndex: ['position', 'offset'], key: 'offset', customRender: ({ text }) => `${text * 100} cm`}
 ]
 
 const fetchData = async () => {
@@ -48,14 +48,14 @@ const fetchData = async () => {
     })
 }
 
-onMounted(() => {
-    fetchData()
+watchEffect(() => {
+    if (props.state.located_screw) {
+        console.log(props.state.located_screw)
+    }
 })
 
-watchEffect(() => {
-    if (props.state) {
-        console.log(props.state)
-    }
+defineExpose({
+    fetchData
 })
 </script>
 

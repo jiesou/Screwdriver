@@ -37,5 +37,5 @@ def screw_data():
         while True:
             text_snippet = imu.handle_screw_data()
             yield text_snippet + "\n"
-            time.sleep(1)
+            time.sleep(0.5)
     return stream_with_context(stream())
