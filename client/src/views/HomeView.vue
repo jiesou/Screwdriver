@@ -4,7 +4,7 @@
   </a-typography-title>
   <a-flex gap="large" wrap="wrap">
     <a-button type="primary" @click="handleStartMoving" :loading="startMovingState.loading"
-      :danger="startMovingState.danger">开始移动</a-button>
+      :danger="startMovingState.isDoing">{{ startMovingState.isDoing ? '停止' : '开始' }}</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
       Z轴角</a-button>
     <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
@@ -34,6 +34,7 @@ const state = ref({})
 const resetZAaxesState = ref({
   loading: false,
   danger: null,
+  isDoing: false,
 })
 const handleResetZAaxes = () => {
   resetZAaxesState.value.loading = true
@@ -51,11 +52,21 @@ const startMovingState = ref({
   danger: null,
 })
 const handleStartMoving = () => {
+  let reader;
+  if (startMovingState.value.isDoing) {
+    startMovingState.value.loading = false
+    startMovingState.value.isDoing = false
+    reader.cancel()
+    message.info('已停止')
+  }
   startMovingState.value.loading = true
+  // 触发 map 更新
   screwMapRef.value.fetchData()
-  callApi('start_moving')
-    .then(response => {
-      const reader = response.body.getReader()
+  callApi('start_moving').then(response => {
+      startMovingState.value.loading = false
+      startMovingState.value.isDoing = true
+
+     reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
       
@@ -78,6 +89,7 @@ const handleStartMoving = () => {
                 stateText.value = `
                   X: ${(state.value.position[0]*100).toFixed(1)} cm
                   Y: ${(state.value.position[1]*100).toFixed(1)} cm
+                  ${state.value.state.is_scrw_tightening ? '拧螺丝中' : '未拧螺丝'}
                   `
               } catch (err) {
                 console.error('JSON 解析错误:', err)

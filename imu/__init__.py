@@ -71,37 +71,7 @@ def locateScrew(screw_map, position):
     # 返回最近的螺丝和距离
     return current_closest_screw
 
-# 侦测到突变后，记录缓反次数，持续 10 次缓返，认为拧螺丝
-angle_z_recovered_times = False
 def isScrewTightening(previous_data):
-    global screw_tightening, angle_z_recovered_times
-    angle_z_history = [data['angle']['z'] for data in previous_data]
-
-    screw_tightening = False
-    if type(angle_z_recovered_times) == int:
-        offset = angle_z_history[-1] - angle_z_history[-2]
-        print(f"offset: {offset}")
-        if offset == 0:
-            pass
-        elif 0 < offset < 4:
-            angle_z_recovered_times += 1
-            print(f"angle_z_decreased: {angle_z_recovered_times}")
-        else:
-            angle_z_recovered_times -= 1
-            print(f"angle_z_decreased: {angle_z_recovered_times}")
-        if angle_z_recovered_times > 6:
-            # screw_tightening = True
-            angle_z_recovered_times = False
-            print("Detected screw tightening.！！！！！！！！！！！！！！！！")
-        if angle_z_recovered_times < -1:
-            screw_tightening = False
-            angle_z_recovered_times = False
-    # 取过去 3 次的中位数作为突变判断的基准
-    median_angle_z = np.median(angle_z_history[-6:-3])
-    if -10 < previous_data[-1]['angle']['z']-median_angle_z < -5:
-        angle_z_recovered_times = 0
-        print("angle['z'] increased significantly.")
-
     return False
 
 inited = False
@@ -141,7 +111,6 @@ screw_tightening = False
 def requirement_process(data, previous_data, positions):
     global screw_map, last_trigger_time, screw_tightening, inited
     screw_map = copy.deepcopy(screw_map_input)
-    print(screw_map_input)
     turningPreviousData(previous_data, data)
     if len(previous_data) < 10: return False
     
@@ -164,7 +133,8 @@ def requirement_process(data, previous_data, positions):
             print("done")
 
     return {
-        "located_screw": located_screw
+        "located_screw": located_screw,
+        "is_screw_tightening": screw_tightening
     }
 
 def parse_data():
@@ -193,7 +163,7 @@ def parse_data():
 
             yield {
                 "position": new_position,
-                "located_screw": state['located_screw'] if state else None,
+                "state": state if state else None,
                 "offset": data['offset'],
                 "angle": data['angle'],
                 "angle_accel": data['angle_accel'],
