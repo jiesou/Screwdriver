@@ -102,7 +102,7 @@ def isScrewTightening(previous_data):
         angle_z_recovered_times = 0
         print("angle['z'] increased significantly.")
 
-    return screw_tightening
+    return False
 
 inited = False
 init_position_manually = False
