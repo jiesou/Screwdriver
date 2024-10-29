@@ -16,23 +16,24 @@
     <div v-if="state.position" style="color: green;">
       <span>X: {{ (state.position[0] * 100).toFixed(1) }} cm</span>
       <span>Y: {{ (state.position[1] * 100).toFixed(1) }} cm</span>
-      <span>{{ state.state.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
+      <span>{{ state.analysis.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
     </div>
     <div v-else style="color: green;">
       等待操作
     </div>
-    <ScrewMap :state="state" ref="screwMapRef" />
+    <ScrewMap />
     </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
+
 import { callApi } from '@/units/api'
+import eventBus from '@/units/eventBus'
 
 import ScrewMap from '@/components/ScrewMap.vue';
 
-const screwMapRef = ref(null)
 const state = ref({})
 
 const resetZAaxesState = ref({
@@ -63,9 +64,12 @@ const handleMoving = () => {
     return;
   }
   movingState.value.loading = true
-  // 触发 map 更新
-  screwMapRef.value.fetchData()
-  callApi('start_moving').then(response => {
+  // 触发更新
+  eventBus.refresh = !eventBus.refresh
+  callApi('start_moving', {
+    method: 'POST',
+    body: eventBus.screwMap
+  }).then(response => {
     movingState.value.loading = false
     movingState.value.isDoing = true
 
@@ -87,12 +91,8 @@ const handleMoving = () => {
         buffer = parts.pop() // 保留最后一个未完成的部分
         parts.forEach(part => {
           if (part) {
-            try {
-              state.value = JSON.parse(part)
-              console.log(state.value)
-            } catch (err) {
-              console.error('JSON 解析错误:', err)
-            }
+            state.value = JSON.parse(part)
+            eventBus.locatedScrew = state.value.analysis.located_screw
           }
         })
         read()

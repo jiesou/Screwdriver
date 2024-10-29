@@ -3,6 +3,9 @@ export async function callApi(path, options) {
     const overrideOptions = options || {
         method: 'GET'
     }
+    if (!overrideOptions.headers) {
+        overrideOptions.headers = {}
+    }
     if (overrideOptions.body) {
         overrideOptions.body = JSON.stringify(overrideOptions.body)
         overrideOptions.headers['Content-Type'] = 'application/json'

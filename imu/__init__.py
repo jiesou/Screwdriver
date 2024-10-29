@@ -46,17 +46,14 @@ class IMUProcessor:
     def __init__(self, screw_map):
         self.screw_map = ScrewMap(screw_map)
         self.current_screw_map = copy.deepcopy(self.screw_map)
-        self.previous_data = []
+
         self.positions = [[0, 0, 0]]
         self.standing = [0, 0, 0]
-        self.inited = False
+
         self.init_position_manually = False
         self.screw_tightening = False
-
-    def turning_previous_data(self, data):
-        if len(self.previous_data) > 9:
-            self.previous_data.pop(0)
-        self.previous_data.append(data)
+        # 跟踪螺丝刀是否已经触发过“拧掉螺丝”行为，已触发过则需要先松开螺丝刀才能再次触发
+        self.screw_tightening_can_trigger = False
 
     def at_initial_position(self, data):
         if self.init_position_manually:
@@ -65,39 +62,30 @@ class IMUProcessor:
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
         is_state_valid = is_standing and abs(data['angle']['y'] + 50) < 7 and abs(
             data['angle']['x']) < 20 and abs(data['angle']['z']) < 20
-        if not self.inited and is_state_valid:
-            self.inited = True
         return is_state_valid
 
     def accumulate_offset_to_position(self, offset):
-        new_position = self.standing.copy()
+        self.positions[-1] = self.standing.copy()
         if offset['x'] == 0:
             self.standing[0] = self.positions[-1][0]
         if offset['y'] == 0:
             self.standing[1] = self.positions[-1][1]
-        new_position[0] = self.standing[0] + offset['x']
-        new_position[1] = self.standing[1] + offset['y']
-        return new_position
+        self.positions[-1][0] = self.standing[0] + offset['x']
+        self.positions[-1][1] = self.standing[1] + offset['y']
+        return self.positions[-1]
 
-    def requirement_process(self, data):
+    def requirement_analyze(self):
         self.current_screw_map = copy.deepcopy(self.screw_map)
-        self.turning_previous_data(data)
-        if len(self.previous_data) < 10:
-            return False
 
         located_screw = self.current_screw_map.locate_closest_screw(
-            self.positions[-1], self.current_screw_map.filter_screws_in_range(self.positions[-1]))
+            self.positions[-1], self.current_screw_map.filter_screws_in_range(self.positions[-1])
+        )
 
-        if located_screw:
-            located_screw['status'] = "已定位"
-
-        if self.screw_tightening and self.inited:
+        if self.screw_tightening and self.screw_tightening_can_trigger:
+            self.screw_tightening_can_trigger = False
             self.current_screw_map.remove_screw(located_screw)
-            print(f"screwd, {len(self.current_screw_map.screws)} left")
-            self.inited = False
-            if len(self.current_screw_map.screws) < 1:
-                print("done")
 
+        # 返回分析结果
         return {
             "located_screw": located_screw,
             "is_screw_tightening": self.screw_tightening
@@ -112,19 +100,19 @@ class IMUProcessor:
             for data in read_data():
                 if data is None:
                     continue
-                new_position = self.accumulate_offset_to_position(
-                    data['offset'])
-                writer.writerow([new_position[0], new_position[1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['angle_accel']['x'], data['angle_accel']['y'], data['angle_accel']['z'],
+
+                self.positions.append(self.accumulate_offset_to_position(data['offset']))
+                
+                writer.writerow([self.positions[-1][0], self.positions[-1][1], data['offset']['x'], data['offset']['y'], data['offset']['z'], data['angle']['x'], data['angle']['y'], data['angle']['z'], data['angle_accel']['x'], data['angle_accel']['y'], data['angle_accel']['z'],
                                  data['gravity_accel']['x'], data['gravity_accel']['y'], data['gravity_accel']['z']])
                 if self.at_initial_position(data):
-                    new_position = [0, 0, 0]
-                self.positions.append(new_position)
+                    self.positions[-1] = [0, 0, 0]
 
-                state = self.requirement_process(data)
+                analysis = self.requirement_analyze()
 
                 yield {
-                    "position": new_position,
-                    "state": state if state else None,
+                    "position": self.positions[-1],
+                    "analysis": analysis if analysis else None,
                     "offset": data['offset'],
                     "angle": data['angle'],
                     "angle_accel": data['angle_accel'],
@@ -137,8 +125,7 @@ class API:
         self.imu_processor = IMUProcessor(screw_map)
 
     def handle_start_moving(self):
-        for state in self.imu_processor.parse_data():
-            yield json.dumps(state)
+        yield from self.imu_processor.parse_data()
 
     def handle_simulate_screw_tightening(self):
         self.imu_processor.screw_tightening = not self.imu_processor.screw_tightening
@@ -147,10 +134,11 @@ class API:
     def handle_reset_desktop_coordinate_system(self):
         self.imu_processor.init_position_manually = True
 
-    def handle_screw_data(self):
-        return json.dumps(self.imu_processor.current_screw_map.screws)
+    def get_screw_map(self):
+        return self.imu_processor.current_screw_map.screws
 
-    def input_current_data(self, data):
+    def set_current_data(self, data):
         # 电流采样所返回的频率
         self.imu_processor.screw_tightening = data['frequency'] > 18
-
+        if not self.imu_processor.screw_tightening:
+            self.imu_processor.screw_tightening_can_trigger = True

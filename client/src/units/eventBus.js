@@ -1,0 +1,14 @@
+import { reactive } from 'vue';
+const eventBus = reactive({
+    refresh: false,
+    screwMap: [
+        {"tag": "左", "position": {"x": 0.2, "y": 0, "allow_offset": 0.07},
+            "quaternion": {"x": 0, "y": 0}},
+        {"tag": "中", "position": {"x": 0.3, "y": 0, "allow_offset": 0.1},
+            "quaternion": {"x": 0, "y": 0}},
+        {"tag": "右", "position": {"x": 0.5, "y": 0, "allow_offset": 0.1},
+            "quaternion": {"x": 0, "y": 0}},
+    ],
+    locatedScrew: {},
+});
+export default eventBus;
