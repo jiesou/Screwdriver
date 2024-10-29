@@ -56,9 +56,6 @@ class IMUProcessor:
             self.previous_data.pop(0)
         self.previous_data.append(data)
 
-    def is_screw_tightening(self):
-        return False
-
     def at_initial_position(self, data):
         if self.init_position_manually:
             self.init_position_manually = False
@@ -84,8 +81,6 @@ class IMUProcessor:
         self.turning_previous_data(data)
         if len(self.previous_data) < 10:
             return False
-
-        self.is_screw_tightening()
 
         located_screw = self.screw_map.locate_closest_screw(self.positions[-1], self.screw_map.filter_screws_in_range(self.positions[-1]))
 
@@ -152,6 +147,6 @@ class API:
         return json.dumps(self.imu_processor.screw_map.screws)
 
     def input_current_data(self, data):
-        print(f"Received data: {data}")
-
+        # 电流采样所返回的频率
+        self.imu_processor.screw_tightening = data['frequency'] > 18
 

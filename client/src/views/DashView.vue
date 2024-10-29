@@ -3,8 +3,8 @@
     螺丝管理
   </a-typography-title>
   <a-flex gap="large" wrap="wrap">
-    <a-button type="primary" @click="handleMoving" :loading="movingState.loading"
-      :danger="movingState.isDoing">{{ movingState.isDoing ? '停止' : '开始' }}</a-button>
+    <a-button type="primary" @click="handleMoving" :loading="movingState.loading" :danger="movingState.isDoing">{{
+      movingState.isDoing ? '停止' : '开始' }}</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
       Z轴角</a-button>
     <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
@@ -12,12 +12,17 @@
     <a-button @click="simulateScrewTightening" :loading="simulateScrewTighteningState.loading"
       :danger="simulateScrewTighteningState.danger">模拟拧螺丝</a-button>
   </a-flex>
-  <div :style="{ marginTop: '20px' }">
-    <a-typography-title :level="3" style="color: green;">
-      {{ stateText }}
-    </a-typography-title>
+  <div :level="3" style="color: green;">
+    <div v-if="state.position" style="color: green;">
+      <span>X: {{ (state.position[0] * 100).toFixed(1) }} cm</span>
+      <span>Y: {{ (state.position[1] * 100).toFixed(1) }} cm</span>
+      <span>{{ state.state.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
+    </div>
+    <div v-else style="color: green;">
+      等待操作
+    </div>
     <ScrewMap :state="state" ref="screwMapRef" />
-  </div>
+    </div>
 </template>
 
 <script setup>
@@ -28,7 +33,6 @@ import { callApi } from '@/units/api'
 import ScrewMap from '@/components/ScrewMap.vue';
 
 const screwMapRef = ref(null)
-const stateText = ref('等待操作')
 const state = ref({})
 
 const resetZAaxesState = ref({
@@ -62,49 +66,45 @@ const handleMoving = () => {
   // 触发 map 更新
   screwMapRef.value.fetchData()
   callApi('start_moving').then(response => {
-      movingState.value.loading = false
-      movingState.value.isDoing = true
+    movingState.value.loading = false
+    movingState.value.isDoing = true
 
     movingState.value.reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      
-      const read = () => {
-        movingState.value.reader.read().then(({ done, value }) => {
-          if (done) {
-            // 流读取完毕
-            movingState.value.loading = false
-            message.success('完成')
-            return
-          }
-          // 处理流数据
-          buffer += decoder.decode(value, { stream: true })
-          const parts = buffer.split('\n')
-          buffer = parts.pop() // 保留最后一个未完成的部分
-          parts.forEach(part => {
-            if (part) {
-                try {
-                state.value = JSON.parse(part)
-                stateText.value = `
-                  X: ${(state.value.position[0]*100).toFixed(1)} cm
-                  Y: ${(state.value.position[1]*100).toFixed(1)} cm
-                  ${state.value.state.is_scrw_tightening ? '拧螺丝中' : '未拧螺丝'}
-                  `
-              } catch (err) {
-                console.error('JSON 解析错误:', err)
-              }
-            }
-          })
-          read()
-        }).catch(err => {
-          // 处理读取错误
-          movingState.value.loading = false
-          message.error(`读取流数据失败: ${err}`)
-        })
-      }
+    const decoder = new TextDecoder()
+    let buffer = ''
 
-      read()
-    })
+    const read = () => {
+      movingState.value.reader.read().then(({ done, value }) => {
+        if (done) {
+          // 流读取完毕
+          movingState.value.loading = false
+          message.success('完成')
+          return
+        }
+        // 处理流数据
+        buffer += decoder.decode(value, { stream: true })
+        const parts = buffer.split('\n')
+        buffer = parts.pop() // 保留最后一个未完成的部分
+        parts.forEach(part => {
+          if (part) {
+            try {
+              state.value = JSON.parse(part)
+              console.log(state.value)
+            } catch (err) {
+              console.error('JSON 解析错误:', err)
+            }
+          }
+        })
+        read()
+      }).catch(err => {
+        // 处理读取错误
+        movingState.value.loading = false
+        message.error(`读取流数据失败: ${err}`)
+      })
+    }
+
+    read()
+  })
     .catch(err => {
       movingState.value.loading = false
       message.error(`后端连接失败: ${err}`)
