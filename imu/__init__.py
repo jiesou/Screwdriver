@@ -1,3 +1,4 @@
+import copy
 import json
 import numpy as np
 from .communication import read_data
@@ -7,7 +8,7 @@ import csv
 
 class ScrewMap:
     def __init__(self, screws):
-        self.screws = screws
+        self.screws = screws.copy()
 
     def filter_screws_in_range(self, position):
         filtered_map = []
@@ -44,6 +45,7 @@ class ScrewMap:
 class IMUProcessor:
     def __init__(self, screw_map):
         self.screw_map = ScrewMap(screw_map)
+        self.current_screw_map = copy.deepcopy(self.screw_map)
         self.previous_data = []
         self.positions = [[0, 0, 0]]
         self.standing = [0, 0, 0]
@@ -78,20 +80,22 @@ class IMUProcessor:
         return new_position
 
     def requirement_process(self, data):
+        self.current_screw_map = copy.deepcopy(self.screw_map)
         self.turning_previous_data(data)
         if len(self.previous_data) < 10:
             return False
 
-        located_screw = self.screw_map.locate_closest_screw(self.positions[-1], self.screw_map.filter_screws_in_range(self.positions[-1]))
+        located_screw = self.current_screw_map.locate_closest_screw(
+            self.positions[-1], self.current_screw_map.filter_screws_in_range(self.positions[-1]))
 
         if located_screw:
             located_screw['status'] = "已定位"
 
         if self.screw_tightening and self.inited:
-            self.screw_map.remove_screw(located_screw)
-            print(f"screwd, {len(self.screw_map.screws)} left")
+            self.current_screw_map.remove_screw(located_screw)
+            print(f"screwd, {len(self.current_screw_map.screws)} left")
             self.inited = False
-            if len(self.screw_map.screws) < 1:
+            if len(self.current_screw_map.screws) < 1:
                 print("done")
 
         return {
@@ -144,7 +148,7 @@ class API:
         self.imu_processor.init_position_manually = True
 
     def handle_screw_data(self):
-        return json.dumps(self.imu_processor.screw_map.screws)
+        return json.dumps(self.imu_processor.current_screw_map.screws)
 
     def input_current_data(self, data):
         # 电流采样所返回的频率

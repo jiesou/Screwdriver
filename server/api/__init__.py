@@ -8,11 +8,11 @@ from imu.communication import z_axes_to_zero
 api_bp = Blueprint('api', __name__)
 
 imu_api = ImuAPI([
-    {"tag": "左", "position": {"x": 0.2, "y": 0.1, "allow_offset": 0.07},
+    {"tag": "左", "position": {"x": 0.2, "y": 0, "allow_offset": 0.07},
         "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
-    {"tag": "中", "position": {"x": 0.3, "y": 0.1, "allow_offset": 0.1},
+    {"tag": "中", "position": {"x": 0.3, "y": 0, "allow_offset": 0.1},
         "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
-    {"tag": "右", "position": {"x": 0.5, "y": 0.1, "allow_offset": 0.1},
+    {"tag": "右", "position": {"x": 0.5, "y": 0, "allow_offset": 0.1},
         "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
 ])
 
