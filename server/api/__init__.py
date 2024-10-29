@@ -1,10 +1,20 @@
+import json
 import time
 from flask import Blueprint, current_app, stream_with_context, request
 from server.units import res
-from imu import api as imu_api
+from imu import API as ImuAPI
 from imu.communication import z_axes_to_zero
 
 api_bp = Blueprint('api', __name__)
+
+imu_api = ImuAPI([
+    {"tag": "左", "position": {"x": 0.2, "y": 0.1, "allow_offset": 0.07},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
+    {"tag": "中", "position": {"x": 0.3, "y": 0.1, "allow_offset": 0.1},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
+    {"tag": "右", "position": {"x": 0.5, "y": 0.1, "allow_offset": 0.1},
+        "quaternion": {"x": 0, "y": 0}, "status": "等待中"},
+])
 
 @api_bp.route('/reset_z_axes')
 def reset_z_axes():
@@ -42,7 +52,10 @@ def screw_data():
 
 
 @api_bp.route('/current_data', methods=['POST'])
-def receive_data():
-    data = request.data.decode('utf-8')
-    print(f"Received data: {data}")
-    return "Data received", 200
+def current_data():
+    try:
+        data = request.data.decode('utf-8')
+        imu_api.input_current_data(json.loads(data))
+        return "Data received", 200
+    except json.JSONDecodeError:
+        return json.dumps({}), 400

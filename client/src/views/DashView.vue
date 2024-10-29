@@ -3,8 +3,8 @@
     螺丝管理
   </a-typography-title>
   <a-flex gap="large" wrap="wrap">
-    <a-button type="primary" @click="handleStartMoving" :loading="startMovingState.loading"
-      :danger="startMovingState.isDoing">{{ startMovingState.isDoing ? '停止' : '开始' }}</a-button>
+    <a-button type="primary" @click="handleMoving" :loading="movingState.loading"
+      :danger="movingState.isDoing">{{ movingState.isDoing ? '停止' : '开始' }}</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
       Z轴角</a-button>
     <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
@@ -33,8 +33,6 @@ const state = ref({})
 
 const resetZAaxesState = ref({
   loading: false,
-  danger: null,
-  isDoing: false,
 })
 const handleResetZAaxes = () => {
   resetZAaxesState.value.loading = true
@@ -47,34 +45,35 @@ const handleResetZAaxes = () => {
   })
 }
 
-const startMovingState = ref({
+const movingState = ref({
   loading: false,
-  danger: null,
+  isDoing: false,
+  reader: null,
 })
-const handleStartMoving = () => {
-  let reader;
-  if (startMovingState.value.isDoing) {
-    startMovingState.value.loading = false
-    startMovingState.value.isDoing = false
-    reader.cancel()
+const handleMoving = () => {
+  if (movingState.value.isDoing) {
+    movingState.value.loading = false
+    movingState.value.isDoing = false
+    movingState.value.reader.cancel()
     message.info('已停止')
+    return;
   }
-  startMovingState.value.loading = true
+  movingState.value.loading = true
   // 触发 map 更新
   screwMapRef.value.fetchData()
   callApi('start_moving').then(response => {
-      startMovingState.value.loading = false
-      startMovingState.value.isDoing = true
+      movingState.value.loading = false
+      movingState.value.isDoing = true
 
-     reader = response.body.getReader()
+    movingState.value.reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
       
       const read = () => {
-        reader.read().then(({ done, value }) => {
+        movingState.value.reader.read().then(({ done, value }) => {
           if (done) {
             // 流读取完毕
-            startMovingState.value.loading = false
+            movingState.value.loading = false
             message.success('完成')
             return
           }
@@ -99,7 +98,7 @@ const handleStartMoving = () => {
           read()
         }).catch(err => {
           // 处理读取错误
-          startMovingState.value.loading = false
+          movingState.value.loading = false
           message.error(`读取流数据失败: ${err}`)
         })
       }
@@ -107,13 +106,12 @@ const handleStartMoving = () => {
       read()
     })
     .catch(err => {
-      startMovingState.value.loading = false
+      movingState.value.loading = false
       message.error(`后端连接失败: ${err}`)
     })
 }
 const simulateScrewTighteningState = ref({
   loading: false,
-  danger: null,
 })
 const simulateScrewTightening = () => {
   simulateScrewTighteningState.value.loading = true
