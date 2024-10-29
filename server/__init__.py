@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, send_from_directory, stream_with_context, request, g
 from flask_cors import CORS, cross_origin
 from werkzeug.exceptions import HTTPException
@@ -20,6 +21,10 @@ def http_error(e):
         'message': e.name})
     response.status = e.code
     return response
+
+# 禁用 Flask 的日志记录
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 @app.route('/')
 def index():

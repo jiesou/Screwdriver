@@ -30,8 +30,6 @@ class ScrewMap:
                 (position[1] - screw['position']['y'])**2
             )
             distance = space_distance
-            print(f"SCREW: tag: %s, space_distance: %.3f, combined_distance: %.3f" % (
-                screw['tag'], space_distance, distance))
             # 找距离最小的
             if distance < current_min_distance:
                 current_min_distance = distance
@@ -39,7 +37,12 @@ class ScrewMap:
         return current_closest_screw
 
     def remove_screw(self, screw):
-        self.screws.remove(screw)
+        print("removed", screw)
+        if screw is None:
+            print("No screw to remove")
+            return
+        self.screws = [s for s in self.screws if s['tag'] != screw['tag']]
+        
 
 
 class IMUProcessor:
