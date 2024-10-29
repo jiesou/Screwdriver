@@ -1,5 +1,5 @@
 import time
-from flask import Blueprint, current_app, stream_with_context
+from flask import Blueprint, current_app, stream_with_context, request
 from server.units import res
 from imu import api as imu_api
 from imu.communication import z_axes_to_zero
@@ -39,3 +39,10 @@ def screw_data():
             yield text_snippet + "\n"
             time.sleep(0.5)
     return stream_with_context(stream())
+
+
+@api_bp.route('/current_data', methods=['POST'])
+def receive_data():
+    data = request.data.decode('utf-8')
+    print(f"Received data: {data}")
+    return "Data received", 200
