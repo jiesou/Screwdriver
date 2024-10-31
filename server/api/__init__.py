@@ -21,7 +21,11 @@ def start_moving():
     def stream():
         yield ""
         for data_snippet in imu_api.handle_start_moving():
-            yield (json.dumps(data_snippet) + "\n")
+            try:
+                yield json.dumps(data_snippet) + "\n"
+            except (GeneratorExit, ConnectionResetError, BrokenPipeError):
+                print("exited")
+                break
     return stream_with_context(stream())
 
 @api_bp.route('/simulate_screw_tightening')
@@ -39,11 +43,11 @@ def reset_desktop_coordinate_system():
 def screw_data():
     return res(current_app, imu_api.get_screw_map())
 
-@api_bp.route('/current_data', methods=['POST'])
+@api_bp.route('/screw_tightening', methods=['POST'])
 def current_data():
     try:
         data = request.data.decode('utf-8')
-        imu_api.set_current_data(json.loads(data))
+        imu_api.set_screw_tightening(json.loads(data))
         return "Data received", 200
     except json.JSONDecodeError:
         return json.dumps({}), 400

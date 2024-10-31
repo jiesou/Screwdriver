@@ -23,8 +23,8 @@ def http_error(e):
     return response
 
 # 禁用 Flask 的日志记录
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+# log = logging.getLogger('werkzeug')
+# log.setLevel(logging.ERROR)
 
 @app.route('/')
 def index():

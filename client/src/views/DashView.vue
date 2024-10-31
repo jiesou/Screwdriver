@@ -22,6 +22,7 @@
       等待操作
     </div>
     <ScrewMap />
+    <ScrewCounter />
     </div>
 </template>
 
@@ -33,6 +34,7 @@ import { callApi } from '@/units/api'
 import eventBus from '@/units/eventBus'
 
 import ScrewMap from '@/components/ScrewMap.vue';
+import ScrewCounter from '@/components/ScrewCounter.vue';
 
 const state = ref({})
 
@@ -93,6 +95,8 @@ const handleMoving = () => {
           if (part) {
             state.value = JSON.parse(part)
             eventBus.locatedScrew = state.value.analysis.located_screw
+            eventBus.counter = state.value.analysis.screw_count
+            console.log(state.value.analysis)
           }
         })
         read()

@@ -41,7 +41,7 @@ class ScrewMap:
         if screw is None:
             print("No screw to remove")
             return
-        self.screws = [s for s in self.screws if s['tag'] != screw['tag']]
+        self.screws.pop(0)
         
 
 
@@ -49,14 +49,13 @@ class IMUProcessor:
     def __init__(self, screw_map):
         self.screw_map = ScrewMap(screw_map)
         self.current_screw_map = copy.deepcopy(self.screw_map)
+        self.screw_count = 6
 
         self.positions = [[0, 0, 0]]
         self.standing = [0, 0, 0]
 
         self.init_position_manually = False
         self.screw_tightening = False
-        # 跟踪螺丝刀是否已经触发过“拧掉螺丝”行为，已触发过则需要先松开螺丝刀才能再次触发
-        self.screw_tightening_can_trigger = False
 
     def at_initial_position(self, data):
         if self.init_position_manually:
@@ -84,14 +83,15 @@ class IMUProcessor:
             self.positions[-1], self.current_screw_map.filter_screws_in_range(self.positions[-1])
         )
 
-        if self.screw_tightening and self.screw_tightening_can_trigger:
-            self.screw_tightening_can_trigger = False
+        if self.screw_tightening:
             self.current_screw_map.remove_screw(located_screw)
+            
 
         # 返回分析结果
         return {
             "located_screw": located_screw,
-            "is_screw_tightening": self.screw_tightening
+            "is_screw_tightening": self.screw_tightening,
+            "screw_count": self.screw_count
         }
 
     def parse_data(self):
@@ -140,8 +140,7 @@ class API:
     def get_screw_map(self):
         return self.imu_processor.current_screw_map.screws
 
-    def set_current_data(self, data):
+    def set_screw_tightening(self, data):
         # 电流采样所返回的频率
-        self.imu_processor.screw_tightening = data['frequency'] > 18
-        if not self.imu_processor.screw_tightening:
-            self.imu_processor.screw_tightening_can_trigger = True
+        self.imu_processor.screw_tightening = data['code'] == 0
+        self.imu_processor.screw_count -= 1
