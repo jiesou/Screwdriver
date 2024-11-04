@@ -3,5 +3,5 @@ numpy
 gatt
 dbus-python
 PyGObject
-flask
-flask_cors
+quart
+quart_cors

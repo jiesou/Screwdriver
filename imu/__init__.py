@@ -16,18 +16,19 @@ class IMUProcessor:
         return is_state_valid
 
     def accumulate_offset_to_position(self, offset):
-        self.positions[-1] = self.standing.copy()
         if offset['x'] == 0:
             self.standing[0] = self.positions[-1][0]
         if offset['y'] == 0:
             self.standing[1] = self.positions[-1][1]
+        self.positions[-1] = self.standing.copy()
         self.positions[-1][0] = self.standing[0] + offset['x']
         self.positions[-1][1] = self.standing[1] + offset['y']
         return self.positions[-1]
 
     def parse_data(self):
         for data in read_data():
-            self.positions.append(self.accumulate_offset_to_position(data['offset']))
+            if data is None: continue
+            self.accumulate_offset_to_position(data['offset'])
             
             if self.at_initial_position(data):
                 self.positions[-1] = [0, 0, 0]

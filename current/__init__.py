@@ -16,7 +16,9 @@ class CurrentProcessor:
             elif frequency <= self.threshold and self.appliance_on:
                 self.is_working = False
                 self.appliance_on = False
-            yield data
+            yield {
+                "is_working": self.is_working is True,
+            }
 
 
 class CurrentAPI:
@@ -26,5 +28,3 @@ class CurrentAPI:
     def handle_start(self):
         yield from self.current_processor.parse_data()
 
-    def is_working(self):
-        return self.current_processor.is_working

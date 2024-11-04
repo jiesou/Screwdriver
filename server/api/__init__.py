@@ -1,6 +1,6 @@
 import json
 import time
-from flask import Blueprint, current_app, stream_with_context, request
+from quart import Blueprint, Response, current_app, request, stream_with_context
 from server.units import res
 
 from imu.communication import z_axes_to_zero
@@ -16,22 +16,29 @@ def reset_z_axes():
     return res(current_app, result)
 
 @api_bp.route('/start_moving', methods=['POST'])
-def start_moving():
+async def start_moving():
     global processor_api
-    processor_api = ProcessorAPI(json.loads(request.data))
-    def stream():
-        yield ""
-        for data_snippet in processor_api.handle_start_moving():
-            try:
+    processor_api = ProcessorAPI(screws=await request.get_json())
+
+    async def generate():
+        yield "{}\n"
+        try:
+            for data_snippet in processor_api.handle_start_moving():
+                # 每个数据片段转换为JSON并添加换行符
+                print("analyzed", data_snippet)
                 yield json.dumps(data_snippet) + "\n"
-            except (GeneratorExit, ConnectionResetError, BrokenPipeError):
-                print("exited")
-                break
-    return stream_with_context(stream())
+                time.sleep(1/30)
+        except Exception as e:
+            print(f"Error in background: {e}")
+            yield json.dumps({"error": str(e)}) + "\n"
+
+    # 返回流式响应
+    return generate()
+
 
 @api_bp.route('/simulate_screw_tightening')
 def simulate_screw_tightening():
-    processor_api.current_api.is_working = True
+    processor_api.current_api.current_processor.is_working = True
     return res(current_app)
 
 @api_bp.route('/reset_desktop_coordinate_system')
@@ -47,7 +54,7 @@ def screw_data():
 def current_data():
     try:
         data = request.data.decode('utf-8')
-        processor_api.current_api.is_working = True
+        processor_api.current_api.current_processor.is_working = True
         return "Data received", 200
     except json.JSONDecodeError:
         return json.dumps({}), 400

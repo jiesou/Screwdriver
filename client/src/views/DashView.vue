@@ -16,7 +16,7 @@
     <div v-if="state.position" style="color: green;">
       <span>X: {{ (state.position[0] * 100).toFixed(1) }} cm</span>
       <span>Y: {{ (state.position[1] * 100).toFixed(1) }} cm</span>
-      <span>{{ state.analysis.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
+      <span>{{ state.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
     </div>
     <div v-else style="color: green;">
       等待操作
@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { message } from 'ant-design-vue'
 
 import { callApi } from '@/units/api'
@@ -93,10 +93,10 @@ const handleMoving = () => {
         buffer = parts.pop() // 保留最后一个未完成的部分
         parts.forEach(part => {
           if (part) {
-            state.value = JSON.parse(part)
-            eventBus.locatedScrew = state.value.analysis.located_screw
-            eventBus.counter = state.value.analysis.screw_count
-            console.log(state.value.analysis)
+            const newState = JSON.parse(part)
+            state.value = { ...state.value, ...newState } // 创建新对象触发响应式
+            eventBus.locatedScrew = state.value.located_screw
+            eventBus.counter = state.value.screw_count
           }
         })
         read()
@@ -106,7 +106,6 @@ const handleMoving = () => {
         message.error(`读取流数据失败: ${err}`)
       })
     }
-
     read()
   })
     .catch(err => {
@@ -114,6 +113,11 @@ const handleMoving = () => {
       message.error(`后端连接失败: ${err}`)
     })
 }
+
+watchEffect(() => {
+  console.log(state.value)
+})
+
 const simulateScrewTighteningState = ref({
   loading: false,
 })

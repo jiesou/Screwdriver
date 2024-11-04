@@ -6,7 +6,7 @@
 
 - `client/`: 前端项目目录，使用 Vue 3 和 Ant Design。
 
-- `server/`: 后端项目目录，使用 Flask。
+- `server/`: 后端项目目录，使用 Quart。
 
 - `install_bluetooth.sh`: 用于 devcontainer 中安装蓝牙依赖的脚本。
 
