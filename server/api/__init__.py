@@ -8,7 +8,7 @@ from processor import ProcessorAPI
 
 api_bp = Blueprint('api', __name__)
 
-processor_api = ProcessorAPI([])
+processor_api = ProcessorAPI()
 
 @api_bp.route('/reset_z_axes')
 def reset_z_axes():
@@ -17,17 +17,14 @@ def reset_z_axes():
 
 @api_bp.route('/start_moving', methods=['POST'])
 async def start_moving():
-    global processor_api
-    processor_api = ProcessorAPI(screws=await request.get_json())
+    processor_api.set_screws(await request.get_json())
 
-    async def generate():
+    def generate():
         yield "{}\n"
         try:
             for data_snippet in processor_api.handle_start_moving():
                 # 每个数据片段转换为JSON并添加换行符
-                print("analyzed", data_snippet)
                 yield json.dumps(data_snippet) + "\n"
-                time.sleep(1/30)
         except Exception as e:
             print(f"Error in background: {e}")
             yield json.dumps({"error": str(e)}) + "\n"

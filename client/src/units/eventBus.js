@@ -12,5 +12,6 @@ const eventBus = reactive({
     ],
     locatedScrew: {},
     counter: -1,
+    state: {}
 });
 export default eventBus;

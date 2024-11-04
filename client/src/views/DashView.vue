@@ -97,6 +97,8 @@ const handleMoving = () => {
             state.value = { ...state.value, ...newState } // 创建新对象触发响应式
             eventBus.locatedScrew = state.value.located_screw
             eventBus.counter = state.value.screw_count
+            // eventBus.state = state.value
+            // console.log(state.value)
           }
         })
         read()

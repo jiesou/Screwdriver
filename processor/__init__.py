@@ -42,20 +42,20 @@ class ScrewMap:
 
 
 class ProcessorAPI:
-    def __init__(self, screws):
-        self.screw_map: ScrewMap = ScrewMap(screws)
-        self.current_screw_map = copy.deepcopy(self.screw_map)
+    def __init__(self):
         self.imu_api = ImuAPI()
         self.current_api = CurrentAPI()
-        self.imu_queue = queue.Queue()
-        self.current_queue = queue.Queue()
 
-        self.stop_event = threading.Event()
         imu_thread = threading.Thread(target=self.get_imu_data)
         current_thread = threading.Thread(target=self.get_current_data)
 
         imu_thread.start()
-        # current_thread.start()
+        current_thread.start()
+        print("inited")
+    
+    def set_screws(self, screws):
+        self.screw_map: ScrewMap = ScrewMap(screws)
+        self.current_screw_map = copy.deepcopy(self.screw_map)
 
     def requirement_analyze(self, imu_data, current_data):
             located_screw = self.current_screw_map.locate_closest_screw(
@@ -75,23 +75,21 @@ class ProcessorAPI:
             }
     
     def get_imu_data(self):
-        while not self.stop_event.is_set():
-            for imu_data in self.imu_api.handle_start():
-                self.imu_queue.put(imu_data)
+        for imu_data in self.imu_api.handle_start():
+            self.imu_data = imu_data
 
     def get_current_data(self):
-        while not self.stop_event.is_set():
-            for current_data in self.current_api.handle_start():
-                self.current_queue.put(current_data)
+        for current_data in self.current_api.handle_start():
+            self.current_data = current_data
 
     def handle_start_moving(self):
         while True:
-            imu_data = self.imu_queue.get()
-            current_data = self.current_queue.get()
-            if not imu_data:
+            if not self.imu_data:
                 continue
             
-            data_snippet = self.requirement_analyze(imu_data, current_data)
+            print("start moving", self.imu_data)
+            data_snippet = self.requirement_analyze(self.imu_data, self.current_data)
+            time.sleep(1/60)
             yield data_snippet
 
     def handle_reset_desktop_coordinate_system(self):
