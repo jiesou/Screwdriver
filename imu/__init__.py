@@ -27,7 +27,7 @@ class IMUProcessor:
 
     def parse_data(self):
         for data in read_data():
-            if data is None:
+            if data is None or 'offset' not in data:
                 yield {
                     "position": [-1, -1, -1]
                 }

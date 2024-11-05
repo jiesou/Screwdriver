@@ -95,16 +95,25 @@ class ProcessorAPI:
             position,
             self.current_screw_map.filter_screws_in_range(position)
         )
+        for screw in self.current_screw_map.screws:
+            if "status" not in screw: screw["status"] = "等待中"
+            if screw["status"] == "已完成": continue
+            screw["status"] = "等待中"
+            if self.current_data["is_working"]:
+                screw["status"] = "已完成"
 
-        if self.current_data["is_working"] and located_screw is not None:
-            located_screw["status"] = "已完成"
+        if located_screw is not None and located_screw["status"] != "已完成":
+            located_screw["status"] = "已定位"
+            if self.current_data["is_working"]:
+                located_screw["status"] = "已完成"
 
         # 返回分析结果
         return {
             "position": position,
             "located_screw": located_screw,
             "is_screw_tightening": self.current_data["is_working"],
-            "screw_count": len(self.current_screw_map.screws)
+            "screw_count": len(self.current_screw_map.screws),
+            "screws": self.current_screw_map.screws
         }
 
     def handle_start_moving(self):
