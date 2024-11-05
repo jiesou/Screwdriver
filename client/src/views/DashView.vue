@@ -70,7 +70,7 @@ const handleMoving = () => {
 
   callApi('start_moving', {
     method: 'POST',
-    body: eventBus.screwMap
+    body: eventBus.initScrews
   }).then(response => {
     movingState.value.isDoing = true;
     movingState.value.reader = response.body.getReader();

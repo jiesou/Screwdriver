@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-table :columns="columns" :dataSource="eventBus.screwMap" rowKey="tag" :rowClassName="highlightRow" />
+    <a-table :columns="columns" :dataSource="eventBus.state.screws" rowKey="tag" :rowClassName="highlightRow" />
   </div>
 </template>
 
@@ -16,16 +16,17 @@ const columns = [
   { title: '允许偏差', dataIndex: ['position', 'allow_offset'], key: 'allow_offset', customRender: ({ text }) => `${text * 100} cm` }
 ]
 
-watch(() => eventBus.locatedScrew, (newScrew) => {
-  if (!newScrew) return
-  eventBus.screwMap.forEach(screw => {
-    if (screw.tag === newScrew.tag) {
-      screw.status = 'highlight'
-    } else {
-      screw.status = ''
-    }
-  })
-})
+// watch(() => eventBus.locatedScrew, (newScrew) => {
+//   if (!newScrew) return
+//   eventBus.initScrews.forEach(screw => {
+//     if (screw.tag === newScrew.tag) {
+//       screw.status = 'highlight'
+//     } else {
+//       screw.status = ''
+//     }
+//   })
+// })
+
 
 // 定义一个方法来动态应用高亮类
 const highlightRow = (record) => {
