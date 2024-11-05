@@ -7,6 +7,7 @@ import time
 from imu import ImuAPI
 from current import CurrentAPI
 
+
 class ScrewMap:
     def __init__(self, screws):
         self.screws = screws.copy()
@@ -45,54 +46,60 @@ class ProcessorAPI:
     def __init__(self):
         self.imu_api = ImuAPI()
         self.current_api = CurrentAPI()
+        self.imu_data = None
+        self.current_data = None
 
-        imu_thread = threading.Thread(target=self.get_imu_data)
-        current_thread = threading.Thread(target=self.get_current_data)
+        def get_imu_data(self):
+            for imu_data in self.imu_api.handle_start():
+                self.imu_data = imu_data
+
+        def get_current_data(self):
+            for current_data in self.current_api.handle_start():
+                self.current_data = current_data
+
+        imu_thread = threading.Thread(target=get_imu_data, args=(self,))
+        current_thread = threading.Thread(target=get_current_data, args=(self,))
 
         imu_thread.start()
         current_thread.start()
         print("inited")
-    
+
     def set_screws(self, screws):
         self.screw_map: ScrewMap = ScrewMap(screws)
         self.current_screw_map = copy.deepcopy(self.screw_map)
 
-    def requirement_analyze(self, imu_data, current_data):
-            located_screw = self.current_screw_map.locate_closest_screw(
-                imu_data["position"],
-                self.current_screw_map.filter_screws_in_range(imu_data["position"])
-            )
+    def requirement_analyze(self):
+        # 在 current_data["is_working"] 为 True 时，屏蔽掉 position 的更新（振动导致 imu 检测不准）
+        if self.current_data["is_working"]:
+            for pos in self.imu_api.imu_processor.positions:
+                formatted_pos = [f"{coord:.2f}" for coord in pos]
+                print("working", formatted_pos)
+            print("----- End of positions -----")
+            if len(self.imu_api.imu_processor.positions) > 1:
+                self.imu_api.imu_processor.positions = self.imu_api.imu_processor.positions[:1]
 
-            if current_data["is_working"] and located_screw is not None:
-                located_screw["status"] = "已完成"
+        position = self.imu_api.imu_processor.positions[-1]
+        located_screw = self.current_screw_map.locate_closest_screw(
+            position,
+            self.current_screw_map.filter_screws_in_range(position)
+        )
 
-            # 返回分析结果
-            return {
-                "position": imu_data["position"],
-                "located_screw": located_screw,
-                "is_screw_tightening": current_data["is_working"],
-                "screw_count": len(self.current_screw_map.screws)
-            }
-    
-    def get_imu_data(self):
-        for imu_data in self.imu_api.handle_start():
-            self.imu_data = imu_data
+        if self.current_data["is_working"] and located_screw is not None:
+            located_screw["status"] = "已完成"
 
-    def get_current_data(self):
-        for current_data in self.current_api.handle_start():
-            self.current_data = current_data
+        # 返回分析结果
+        return {
+            "position": position,
+            "located_screw": located_screw,
+            "is_screw_tightening": self.current_data["is_working"],
+            "screw_count": len(self.current_screw_map.screws)
+        }
 
     def handle_start_moving(self):
         while True:
-            if not self.imu_data:
-                continue
-            
-            print("start moving", self.imu_data)
-            data_snippet = self.requirement_analyze(self.imu_data, self.current_data)
+            data_snippet = self.requirement_analyze()
             time.sleep(1/60)
             yield data_snippet
 
     def handle_reset_desktop_coordinate_system(self):
         self.imu_api.imu_processor.positions = [[0, 0, 0]]
-
-

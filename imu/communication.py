@@ -288,6 +288,7 @@ def read_data():
             print("蓝牙断开，尝试重新连接...")
             reconnect_bluetooth()
             time.sleep(1)  # 等待一段时间后重试
+            yield None
 
 def z_axes_to_zero():
     device.lzchar1.write_value(bytearray([0x05]))

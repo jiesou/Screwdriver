@@ -9,6 +9,11 @@ class CurrentProcessor:
 
     def parse_data(self):
         for data in read_data():
+            if data is None:
+                yield {
+                    "is_working": False
+                }
+                continue
             frequency = data['frequency']
             if frequency > self.threshold and not self.appliance_on:
                 self.is_working = True

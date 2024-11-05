@@ -3,8 +3,8 @@
     螺丝管理
   </a-typography-title>
   <a-flex gap="large" wrap="wrap">
-    <a-button type="primary" @click="handleMoving" :loading="movingState.loading" :danger="movingState.isDoing">{{
-      movingState.isDoing ? '停止' : '开始' }}</a-button>
+    <a-button type="primary" danger @click="handleStopMoving" :loading="movingState.loading" v-if="movingState.isDoing">停止</a-button>
+    <a-button type="primary" @click="handleMoving" :loading="movingState.loading" v-else>开始</a-button>
     <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
       Z轴角</a-button>
     <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
@@ -57,64 +57,62 @@ const movingState = ref({
   isDoing: false,
   reader: null,
 })
+const handleStopMoving = () => {
+  movingState.value.isDoing = false;
+  if (movingState.value.reader) movingState.value.reader.cancel();
+  message.info('已停止');
+}
 const handleMoving = () => {
-  if (movingState.value.isDoing) {
-    movingState.value.loading = false
-    movingState.value.isDoing = false
-    movingState.value.reader.cancel()
-    message.info('已停止')
-    return;
-  }
-  movingState.value.loading = true
-  // 触发更新
-  eventBus.refresh = !eventBus.refresh
+  movingState.value.loading = true;
+  eventBus.refresh = !eventBus.refresh;
+
   callApi('start_moving', {
     method: 'POST',
     body: eventBus.screwMap
   }).then(response => {
-    movingState.value.loading = false
-    movingState.value.isDoing = true
+    movingState.value.isDoing = true;
+    movingState.value.reader = response.body.getReader();
 
-    movingState.value.reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
+    const decoder = new TextDecoder();
+    let buffer = '';
 
     const read = () => {
       movingState.value.reader.read().then(({ done, value }) => {
         if (done) {
-          // 流读取完毕
-          movingState.value.loading = false
-          message.success('完成')
-          return
+          handleStopMoving();
+          message.success('完成');
+          return;
         }
         // 处理流数据
-        buffer += decoder.decode(value, { stream: true })
-        const parts = buffer.split('\n')
-        buffer = parts.pop() // 保留最后一个未完成的部分
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n');
+        buffer = parts.pop();
+
         parts.forEach(part => {
           if (part) {
-            const newState = JSON.parse(part)
-            state.value = { ...state.value, ...newState } // 创建新对象触发响应式
-            eventBus.locatedScrew = state.value.located_screw
-            eventBus.counter = state.value.screw_count
-            // eventBus.state = state.value
-            // console.log(state.value)
+            try {
+              const newState = JSON.parse(part);
+              state.value = { ...state.value, ...newState };
+              eventBus.locatedScrew = state.value.located_screw;
+              eventBus.counter = state.value.screw_count;
+            } catch (e) {
+              console.error('解析数据失败:', e);
+              console.error(e);
+            }
           }
-        })
-        read()
-      }).catch(err => {
-        // 处理读取错误
-        movingState.value.loading = false
-        message.error(`读取流数据失败: ${err}`)
-      })
-    }
-    read()
-  })
-    .catch(err => {
-      movingState.value.loading = false
-      message.error(`后端连接失败: ${err}`)
-    })
-}
+        });
+        read();
+      });
+    };
+    read();
+  }).catch(e => {
+    handleStopMoving();
+    message.error(`后端连接失败: ${e}`);
+    console.error(e);
+  }).finally(() => {
+    movingState.value.loading = false;
+  });
+};
 
 watchEffect(() => {
   console.log(state.value)
