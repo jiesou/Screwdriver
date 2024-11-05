@@ -21,6 +21,7 @@
     <div v-else style="color: green;">
       等待操作
     </div>
+    <ScrewTable />
     <ScrewMap />
     <ScrewCounter />
     </div>
@@ -33,6 +34,7 @@ import { message } from 'ant-design-vue'
 import { callApi } from '@/units/api'
 import eventBus from '@/units/eventBus'
 
+import ScrewTable from '@/components/ScrewTable.vue';
 import ScrewMap from '@/components/ScrewMap.vue';
 import ScrewCounter from '@/components/ScrewCounter.vue';
 
@@ -95,6 +97,7 @@ const handleMoving = () => {
               state.value = { ...state.value, ...newState };
               eventBus.locatedScrew = state.value.located_screw;
               eventBus.counter = state.value.screw_count;
+              eventBus.state = state.value;
             } catch (e) {
               console.error('解析数据失败:', e);
               console.error(e);
@@ -114,10 +117,6 @@ const handleMoving = () => {
   });
 };
 
-watchEffect(() => {
-  console.log(state.value)
-})
-
 const simulateScrewTighteningState = ref({
   loading: false,
 })
@@ -135,7 +134,8 @@ const simulateScrewTightening = () => {
 // 空格键
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
-    simulateScrewTightening()
+    // simulateScrewTightening()
+    resetDesktopCoordinateSystem()
   }
 })
 

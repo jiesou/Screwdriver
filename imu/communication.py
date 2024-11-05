@@ -286,21 +286,19 @@ def read_data():
             yield results.pop(0)
         if not device.is_connected():
             print("蓝牙断开，尝试重新连接...")
-            reconnect_bluetooth()
-            time.sleep(1)  # 等待一段时间后重试
+            while True:
+                try:
+                    init_bluetooth()
+                    print("蓝牙重新连接……")
+                    break
+                except Exception as e:
+                    print(f"重新连接失败: {e}")
+                    time.sleep(4)
+            time.sleep(1)
+            device.callback = data_callback
             yield None
 
 def z_axes_to_zero():
     device.lzchar1.write_value(bytearray([0x05]))
-
-def reconnect_bluetooth():
-    while True:
-        try:
-            init_bluetooth()
-            print("蓝牙重新连接……")
-            break
-        except Exception as e:
-            print(f"重新连接失败: {e}")
-            time.sleep(5)  # 等待一段时间后重试
 
 init_bluetooth()

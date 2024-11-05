@@ -5,6 +5,7 @@ from server.units import res
 
 from imu.communication import z_axes_to_zero
 from processor import ProcessorAPI
+import traceback
 
 api_bp = Blueprint('api', __name__)
 
@@ -26,6 +27,7 @@ async def start_moving():
                 # 每个数据片段转换为JSON并添加换行符
                 yield json.dumps(data_snippet) + "\n"
         except Exception as e:
+            traceback.print_exc()
             print(f"Error in background: {e}")
             yield json.dumps({"error": str(e)}) + "\n"
 

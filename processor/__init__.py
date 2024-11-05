@@ -76,8 +76,20 @@ class ProcessorAPI:
                 print("working", formatted_pos)
             print("----- End of positions -----")
             if len(self.imu_api.imu_processor.positions) > 1:
-                self.imu_api.imu_processor.positions = self.imu_api.imu_processor.positions[:1]
-
+                self.imu_api.imu_processor.positions = [
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1], 
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1],
+                    self.imu_api.imu_processor.positions[1]
+                ]
+                self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
+                
         position = self.imu_api.imu_processor.positions[-1]
         located_screw = self.current_screw_map.locate_closest_screw(
             position,

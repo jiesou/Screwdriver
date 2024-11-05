@@ -1,41 +1,42 @@
 <template>
-  <div>
-    <a-table :columns="columns" :dataSource="eventBus.screwMap" rowKey="tag" :rowClassName="highlightRow" />
-  </div>
+    <div class="map-container">
+        <!-- 坐标点 -->
+        <div v-if="position"
+            class="position-dot"
+            :style="{
+                left: `${position[0] * 100}cm`,
+                bottom: `${position[1] * 100}cm`
+            }"
+        >{{
+            `X: ${(position[0] * 100).toFixed(1)}cm, Y: ${(position[1] * 100).toFixed(1)}cm`
+        }}</div>
+    </div>
 </template>
 
 <script setup>
-import { watch } from 'vue'
+import { computed, watchEffect } from 'vue';
 import eventBus from '@/units/eventBus';
 
-const columns = [
-  { title: '序号', dataIndex: 'tag', key: 'tag' },
-  { title: '动作状态', dataIndex: 'status', key: 'status' },
-  { title: 'X位置', dataIndex: ['position', 'x'], key: 'x', customRender: ({ text }) => `${text * 100} cm` },
-  { title: 'Y位置', dataIndex: ['position', 'y'], key: 'y', customRender: ({ text }) => `${text * 100} cm` },
-  { title: '允许偏差', dataIndex: ['position', 'allow_offset'], key: 'allow_offset', customRender: ({ text }) => `${text * 100} cm` }
-]
+const position = computed(() => eventBus.state.position);
 
-watch(() => eventBus.locatedScrew, (newScrew) => {
-  if (!newScrew) return
-  eventBus.screwMap.forEach(screw => {
-    if (screw.tag === newScrew.tag) {
-      screw.status = 'highlight'
-    } else {
-      screw.status = ''
-    }
-  })
-})
-
-// 定义一个方法来动态应用高亮类
-const highlightRow = (record) => {
-  return record.status === 'highlight' ? 'highlight' : ''
-}
 </script>
 
 <style scoped>
-.highlight {
-  background-color: yellow;
-  /* 你可以根据需要调整样式 */
+.map-container {
+    position: relative;
+    width: 400px;
+    height: 200px;
+    border: 1px solid #ccc;
+    background: #f0f0f0;
+}
+
+.position-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: red;
+    border-radius: 50%;
+    transform: translate(-50%, 50%);
+    /* 使点的中心对准坐标 */
 }
 </style>
