@@ -70,25 +70,25 @@ class ProcessorAPI:
 
     def requirement_analyze(self):
         # 在 current_data["is_working"] 为 True 时，屏蔽掉 position 的更新（振动导致 imu 检测不准）
-        if self.current_data["is_working"]:
-            for pos in self.imu_api.imu_processor.positions:
-                formatted_pos = [f"{coord:.2f}" for coord in pos]
-                print("working", formatted_pos)
-            print("----- End of positions -----")
-            if len(self.imu_api.imu_processor.positions) > 1:
-                self.imu_api.imu_processor.positions = [
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1], 
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1],
-                    self.imu_api.imu_processor.positions[1]
-                ]
-                self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
+        # if self.current_data["is_working"]:
+        #     for pos in self.imu_api.imu_processor.positions:
+        #         formatted_pos = [f"{coord:.2f}" for coord in pos]
+        #         print("working", formatted_pos)
+        #     print("----- End of positions -----")
+        #     if len(self.imu_api.imu_processor.positions) > 1:
+        #         self.imu_api.imu_processor.positions = [
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1], 
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1],
+        #             self.imu_api.imu_processor.positions[1]
+        #         ]
+        #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
                 
         position = self.imu_api.imu_processor.positions[-1]
         located_screw = self.current_screw_map.locate_closest_screw(

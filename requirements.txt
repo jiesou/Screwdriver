@@ -5,3 +5,4 @@ dbus-python
 PyGObject
 quart
 quart_cors
+scipy

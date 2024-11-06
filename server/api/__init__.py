@@ -30,6 +30,8 @@ async def start_moving():
             traceback.print_exc()
             print(f"Error in background: {e}")
             yield json.dumps({"error": str(e)}) + "\n"
+        finally:
+            yield ""
 
     # 返回流式响应
     return generate()

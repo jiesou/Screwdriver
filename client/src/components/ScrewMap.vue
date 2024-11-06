@@ -28,11 +28,11 @@ import eventBus from '@/units/eventBus';
 
 const position = computed(() => eventBus.state.position);
 
-const physics_width = 0.6;
-const physics_height = 0.3;
+const physics_width = 2;
+const physics_height = 1;
 
-const container_width = 800;
-const container_height = 400;
+const container_width = 1600;
+const container_height = 800;
 const dot_size = 10;
 
 const mapToPixels = (realX, realY) => {
@@ -58,8 +58,8 @@ const screws = computed(() => eventBus.state.screws);
 <style scoped>
 .map-container {
     position: relative;
-    width: 800px;
-    height: 400px;
+    width: 1600px;
+    height: 800px;
     border: 1px solid #ccc;
     background: #f0f0f0;
 }

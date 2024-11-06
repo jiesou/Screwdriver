@@ -5,6 +5,7 @@ from numpy import array
 import gatt
 import time
 import threading
+import dbus.exceptions
 
 from argparse import ArgumentParser
 from array import array
@@ -284,8 +285,11 @@ def read_data():
     while True:
         if results:
             yield results.pop(0)
-        if not device.is_connected():
-            print("蓝牙断开，尝试重新连接...")
+        try:
+            if not device.is_connected():
+                raise dbus.exceptions.DBusException("蓝牙断开")
+        except dbus.exceptions.DBusException as e:
+            print(f"蓝牙断开，尝试重新连接... {e}")
             while True:
                 try:
                     init_bluetooth()

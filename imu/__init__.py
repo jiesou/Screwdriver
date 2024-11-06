@@ -8,6 +8,8 @@ class IMUProcessor:
         self.standing = [0, 0, 0]
 
         self.screw_tightening = False
+        self.h = 1  # 固定高度为1米
+        self.center_point = [1, 0.5]  # 添加模拟中心点坐标
 
     def at_initial_position(self, data):
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
@@ -15,29 +17,32 @@ class IMUProcessor:
             data['angle']['x']) < 20 and abs(data['angle']['z']) < 20
         return is_state_valid
 
-    def accumulate_offset_to_position(self, offset):
-        if offset['x'] == 0:
-            self.standing[0] = self.positions[-1][0]
-        if offset['y'] == 0:
-            self.standing[1] = self.positions[-1][1]
-        new_position = self.standing.copy()
-        new_position[0] = self.standing[0] + offset['x']
-        new_position[1] = self.standing[1] + offset['y']
-        return new_position
+    def compute_position(self, angle):
+        # 将角度转换为弧度
+        x_rad = np.radians(angle['x'])
+        y_rad = np.radians(angle['y'])
+        
+        # 基于中心点计算偏移位置
+        x = self.center_point[0] + self.h * np.tan(x_rad)
+        y = self.center_point[1] + self.h * np.tan(y_rad)
+        
+        return [x, y]
 
     def parse_data(self):
         for data in read_data():
-            if data is None or 'offset' not in data:
+            if data is None or 'angle' not in data:
                 yield {
                     "position": [-1, -1, -1]
                 }
                 continue
-            self.positions.append(self.accumulate_offset_to_position(data['offset']))
+
+            position = self.compute_position(data['angle'])
+            self.positions.append(position)
             if len(self.positions) > 20:
                 self.positions.pop(0)
             
             if self.at_initial_position(data):
-                self.positions[-1] = [0, 0, 0]
+                self.positions[-1] = [self.center_point[0], self.center_point[1], 0]
 
             yield {
                 "position": self.positions[-1],
