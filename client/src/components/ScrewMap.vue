@@ -19,7 +19,9 @@
             </div>
             <div class="screw-allowed-range" :style="{
                 width: `${resize2Pixels(screw.position.allowOffset * 2, 'width')}px`,
-                height: `${resize2Pixels(screw.position.allowOffset * 2, 'height')}px`
+                height: `${resize2Pixels(screw.position.allowOffset * 2, 'height')}px`,
+                borderColor: getRangeColor(screw.status).border,
+                background: getRangeColor(screw.status).background
             }">
             </div>
         </div>
@@ -52,6 +54,27 @@ const boundedPixel = (realValue, dimension) => {
     const containerSize = dimension === 'width' ? container_width.value : container_height.value;
     const pixelValue = resize2Pixels(realValue, dimension);
     return Math.min(Math.max(pixelValue, dot_size / 2), containerSize - dot_size / 2);
+};
+
+// 根据状态获取颜色
+const getRangeColor = (status) => {
+    switch (status) {
+        case '已定位':
+            return {
+                border: 'rgba(255, 255, 0, 0.5)',
+                background: 'rgba(255, 255, 0, 0.2)'
+            };
+        case '已完成':
+            return {
+                border: 'rgba(0, 255, 0, 0.5)',
+                background: 'rgba(0, 255, 0, 0.2)'
+            };
+        default:
+            return {
+                border: 'rgba(0, 0, 255, 0.5)',
+                background: 'rgba(0, 0, 255, 0.2)'
+            };
+    }
 };
 
 watchEffect(() => {
@@ -87,8 +110,7 @@ watchEffect(() => {
 .screw-allowed-range {
     position: absolute;
     border-radius: 50%;
-    border: 2px solid rgba(0, 0, 255, 0.5);
-    background: rgba(0, 0, 255, 0.2);
+    border: 2px solid;  /* 移除固定颜色 */
     left: 0;
     bottom: 0;
     transform: translate(-50%, 50%);
