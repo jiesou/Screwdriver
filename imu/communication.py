@@ -25,15 +25,15 @@ class AnyDevice(gatt.Device):
 
     def connect_succeeded(self):
         super().connect_succeeded()
-        print("[%s] 蓝牙已连接" % (self.mac_address))
+        print("[%s] 惯性测量单元蓝牙已连接" % (self.mac_address))
 
     def connect_failed(self, error):
         super().connect_failed(error)
-        print("[%s] 蓝牙连接失败：%s" % (self.mac_address, str(error)))
+        print("[%s] 惯性测量单元蓝牙连接失败：%s" % (self.mac_address, str(error)))
 
     def disconnect_succeeded(self):
         super().disconnect_succeeded()
-        print("[%s] 蓝牙连接已断开" % (self.mac_address))
+        print("[%s] 惯性测量单元蓝牙连接已断开" % (self.mac_address))
 
     def services_resolved(self):
         super().services_resolved()
@@ -51,7 +51,7 @@ class AnyDevice(gatt.Device):
             if c.uuid == '0000ae01-0000-1000-8000-00805f9b34fb'.lower())
         self.lzchar1.write_value(')'.encode())  # 发送十六进制的0x29，让设备保持连接
 
-        # 尝试采用蓝牙高速通信特性 0x46
+        # 尝试采用惯性测量单元蓝牙高速通信特性 0x46
         self.lzchar1.write_value(bytes([0x46]))
 
         # GPIO 上拉
@@ -287,16 +287,16 @@ def read_data():
             yield results.pop(0)
         try:
             if not device.is_connected():
-                raise dbus.exceptions.DBusException("蓝牙断开")
+                raise dbus.exceptions.DBusException("惯性测量单元蓝牙断开")
         except dbus.exceptions.DBusException as e:
-            print(f"蓝牙断开，尝试重新连接... {e}")
+            print(f"惯性测量单元蓝牙断开，尝试重新连接... {e}")
             while True:
                 try:
                     init_bluetooth()
-                    print("蓝牙重新连接……")
+                    print("惯性测量单元蓝牙重新连接……")
                     break
                 except Exception as e:
-                    print(f"重新连接失败: {e}")
+                    print(f"惯性测量单元蓝牙重新连接失败: {e}")
                     time.sleep(4)
             time.sleep(1)
             device.callback = data_callback

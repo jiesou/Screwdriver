@@ -10,7 +10,7 @@ export async function callApi(path, options) {
         overrideOptions.body = JSON.stringify(overrideOptions.body)
         overrideOptions.headers['Content-Type'] = 'application/json'
     }
-    return fetch(`http://localhost:3000/api/${path}`, overrideOptions)
+    return fetch(`http://${window.location.host}/api/${path}`, overrideOptions)
         .then(response => {
             return response
         })

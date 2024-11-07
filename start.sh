@@ -1,2 +1,2 @@
 python -m server &
-(cd client && yarn dev) &
+(cd client && yarn dev --host) &

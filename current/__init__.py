@@ -10,7 +10,6 @@ class CurrentProcessor:
     def parse_data(self):
         for data in read_data():
             if data is None:
-                print("data is none")
                 yield {
                     "is_working": False
                 }
