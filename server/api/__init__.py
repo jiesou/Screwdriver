@@ -26,14 +26,12 @@ async def start_moving():
             for data_snippet in processor_api.handle_start_moving():
                 # 每个数据片段转换为JSON并添加换行符
                 yield json.dumps(data_snippet) + "\n"
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
-            print(f"Error in background: {e}")
-            yield json.dumps({"error": str(e)}) + "\n"
-        finally:
-            yield ""
+        except GeneratorExit:
+            print("客户端断开连接")
+            raise
 
-    # 返回流式响应
     return generate()
 
 

@@ -19,7 +19,7 @@ class ScrewMap:
                 (position[0] - screw['position']['x'])**2 +
                 (position[1] - screw['position']['y'])**2
             )
-            if space_distance < screw['position']['allow_offset']:
+            if space_distance < screw['position']['allowOffset']:
                 filtered_map.append(screw)
         return filtered_map
 
@@ -50,12 +50,18 @@ class ProcessorAPI:
         self.current_data = None
 
         def get_imu_data(self):
-            for imu_data in self.imu_api.handle_start():
-                self.imu_data = imu_data
+            try:
+                for imu_data in self.imu_api.handle_start():
+                    self.imu_data = imu_data
+            except Exception as e:
+                print("Error in imu data", e)
 
         def get_current_data(self):
-            for current_data in self.current_api.handle_start():
-                self.current_data = current_data
+            try:
+                for current_data in self.current_api.handle_start():
+                    self.current_data = current_data
+            except Exception as e:
+                print("Error in current data", e)
 
         imu_thread = threading.Thread(target=get_imu_data, args=(self,))
         current_thread = threading.Thread(target=get_current_data, args=(self,))
@@ -119,6 +125,7 @@ class ProcessorAPI:
     def handle_start_moving(self):
         while True:
             data_snippet = self.requirement_analyze()
+            print
             time.sleep(1/60)
             yield data_snippet
 

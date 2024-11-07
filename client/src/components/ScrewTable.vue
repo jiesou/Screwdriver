@@ -13,7 +13,7 @@ const columns = [
   { title: '动作状态', dataIndex: 'status', key: 'status' },
   { title: 'X位置', dataIndex: ['position', 'x'], key: 'x', customRender: ({ text }) => `${text * 100} cm` },
   { title: 'Y位置', dataIndex: ['position', 'y'], key: 'y', customRender: ({ text }) => `${text * 100} cm` },
-  { title: '允许偏差', dataIndex: ['position', 'allow_offset'], key: 'allow_offset', customRender: ({ text }) => `${text * 100} cm` }
+  { title: '允许偏差', dataIndex: ['position', 'allowOffset'], key: 'allowOffset', customRender: ({ text }) => `${text * 100} cm` }
 ]
 
 // watch(() => eventBus.locatedScrew, (newScrew) => {

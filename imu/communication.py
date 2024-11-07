@@ -12,8 +12,8 @@ from array import array
 import socket
 import sys
 
-mac_address = "67:F8:1E:C8:D6:77"
-
+mac_address = "67:F8:1E:C8:D6:77" # 老
+# mac_address = "3B:E9:F2:1D:BA:D9"  # 新
 
 class AnyDevice(gatt.Device):
 
