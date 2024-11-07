@@ -101,17 +101,23 @@ class ProcessorAPI:
             position,
             self.current_screw_map.filter_screws_in_range(position)
         )
+
+        completed_count = 0
         for screw in self.current_screw_map.screws:
             if "status" not in screw: screw["status"] = "等待中"
-            if screw["status"] == "已完成": continue
+            if screw["status"] == "已完成":
+                completed_count += 1
+                if completed_count >= len(self.current_screw_map.screws):
+                    self.current_screw_map = copy.deepcopy(self.screw_map)
+                    break
+                continue
             screw["status"] = "等待中"
-            if self.current_data["is_working"]:
-                screw["status"] = "已完成"
 
         if located_screw is not None and located_screw["status"] != "已完成":
             located_screw["status"] = "已定位"
             if self.current_data["is_working"]:
                 located_screw["status"] = "已完成"
+                self.current_data["is_working"] = False
 
         # 返回分析结果
         return {

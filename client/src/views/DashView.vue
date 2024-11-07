@@ -2,29 +2,34 @@
   <a-typography-title>
     螺丝管理
   </a-typography-title>
-  <a-flex gap="large" wrap="wrap">
-    <a-button type="primary" danger @click="handleStopMoving" :loading="movingState.loading" v-if="movingState.isDoing">停止</a-button>
-    <a-button type="primary" @click="handleMoving" :loading="movingState.loading" v-else>开始</a-button>
-    <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
-      Z轴角</a-button>
-    <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
-      :danger="resetDesktopCoordinateSystemState.danger">重置桌面坐标系</a-button>
-    <a-button @click="simulateScrewTightening" :loading="simulateScrewTighteningState.loading"
-      :danger="simulateScrewTighteningState.danger">模拟拧螺丝</a-button>
-  </a-flex>
-  <div :level="3" style="color: green;">
-    <div v-if="state.position" style="color: green;">
-      <span>X: {{ (state.position[0] * 100).toFixed(1) }} cm</span>
-      <span>Y: {{ (state.position[1] * 100).toFixed(1) }} cm</span>
-      <span>{{ state.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
+  <a-flex>
+    <div style="margin-right: 15px;">
+      <a-flex gap="large" wrap="wrap">
+        <a-button type="primary" danger @click="handleStopMoving" :loading="movingState.loading"
+          v-if="movingState.isDoing">停止</a-button>
+        <a-button type="primary" @click="handleMoving" :loading="movingState.loading" v-else>开始</a-button>
+        <a-button @click="handleResetZAaxes" :loading="resetZAaxesState.loading" :danger="resetZAaxesState.danger">重置
+          Z轴角</a-button>
+        <a-button @click="resetDesktopCoordinateSystem" :loading="resetDesktopCoordinateSystemState.loading"
+          :danger="resetDesktopCoordinateSystemState.danger">重置桌面坐标系</a-button>
+        <a-button @click="simulateScrewTightening" :loading="simulateScrewTighteningState.loading"
+          :danger="simulateScrewTighteningState.danger">模拟拧螺丝</a-button>
+      </a-flex>
+      <div :level="3" style="color: green;">
+        <div v-if="state.position" style="color: green;">
+          <span>X: {{ (state.position[0] * 100).toFixed(1) }} cm</span>
+          <span>Y: {{ (state.position[1] * 100).toFixed(1) }} cm</span>
+          <span>{{ state.is_screw_tightening ? '拧螺丝中' : '未拧螺丝' }}</span>
+        </div>
+        <div v-else style="color: green;">
+          等待操作
+        </div>
+      </div>
+      <ScrewTable />
+      <ScrewCounter />
     </div>
-    <div v-else style="color: green;">
-      等待操作
-    </div>
-    <ScrewTable />
     <ScrewMap />
-    <ScrewCounter />
-    </div>
+  </a-flex>
 </template>
 
 <script setup>
@@ -77,17 +82,17 @@ const handleMoving = async () => {
         method: 'POST',
         body: eventBus.initScrews
       });
-      
+
       movingState.value.isDoing = true;
       movingState.value.reader = response.body.getReader();
-      
+
       const decoder = new TextDecoder();
       let buffer = '';
 
       const read = async () => {
         try {
           const { done, value } = await movingState.value.reader.read();
-          
+
           if (done) {
             // 如果正常结束，不需要重连
             if (movingState.value.isDoing) {
@@ -101,7 +106,7 @@ const handleMoving = async () => {
 
           // 重置重试计数
           movingState.value.retryCount = 0;
-          
+
           buffer += decoder.decode(value, { stream: true });
           const parts = buffer.split('\n');
           buffer = parts.pop();
@@ -122,7 +127,7 @@ const handleMoving = async () => {
           read();
         } catch (error) {
           console.error('读取流错误:', error);
-          
+
           if (movingState.value.isDoing && movingState.value.retryCount < movingState.value.maxRetries) {
             movingState.value.retryCount++;
             message.warning(`连接断开，正在尝试重新连接 (${movingState.value.retryCount}/${movingState.value.maxRetries})`);

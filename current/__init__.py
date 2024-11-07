@@ -4,7 +4,7 @@ from .communication import read_data
 class CurrentProcessor:
     def __init__(self):
         self.is_working = False
-        self.threshold = 16.0
+        self.threshold = 15.0
         self.appliance_on = False  # 用于跟踪设备状态
 
     def parse_data(self):

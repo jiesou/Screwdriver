@@ -1,65 +1,71 @@
 <template>
-    <div class="map-container">
-        <!-- 坐标点 -->
+    <div class="map-container" :style="{
+        width: container_width + 'px',
+        height: container_height + 'px'
+    }">
         <div v-if="position" class="position-dot" :style="{
-            left: `${boundedPosition[0]}px`,
-            bottom: `${boundedPosition[1]}px`
+            left: `${boundedPixel(position[0], 'width')}px`,
+            bottom: `${boundedPixel(position[1], 'height')}px`
         }">{{
-            `${(position[0] * 100).toFixed(1)}\n${(position[1] * 100).toFixed(1)}`
-        }}</div>
-        
-        <!-- 螺丝点 -->
-        <div v-for="screw in screws" :key="screw.id" 
-             class="screw-dot" 
-             :style="{
-                left: `${mapToPixels(screw.position.x, screw.position.y)[0]}px`,
-                bottom: `${mapToPixels(screw.position.x, screw.position.y)[1]}px`
-             }">
-             {{
-                screw.tag
-             }}
+            `${(position[0] * 100).toFixed(1)}cm\n${(position[1] * 100).toFixed(1)}cm`
+            }}</div>
+
+        <div v-for="screw in screws" :key="screw.tag" class="screw-wrapper" :style="{
+            left: `${boundedPixel(screw.position.x, 'width')}px`,
+            bottom: `${boundedPixel(screw.position.y, 'height')}px`
+        }">
+            <div class="screw-dot">
+                {{ screw.tag }}
+            </div>
+            <div class="screw-allowed-range" :style="{
+                width: `${resize2Pixels(screw.position.allowOffset * 2, 'width')}px`,
+                height: `${resize2Pixels(screw.position.allowOffset * 2, 'height')}px`
+            }">
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, watchEffect, ref } from 'vue';
 import eventBus from '@/units/eventBus';
 
 const position = computed(() => eventBus.state.position);
+const screws = computed(() => eventBus.state.screws);
 
+// 物理和显示尺寸常量
 const physics_width = 2;
-const physics_height = 1;
-
-const container_width = 1600;
-const container_height = 800;
+const physics_height = 2;
+const container_width = ref(800);
+const container_height = ref(800);
 const dot_size = 10;
 
-const mapToPixels = (realX, realY) => {
-    const pixelX = (realX / physics_width) * container_width;
-    const pixelY = (realY / physics_height) * container_height;
-    return [pixelX, pixelY];
+const resize2Pixels = (realSize, dimension) => {
+    const containerSize = dimension === 'width' ? container_width.value : container_height.value;
+    const physicsSize = dimension === 'width' ? physics_width : physics_height;
+    return (realSize / physicsSize) * containerSize;
 };
 
-const boundedPosition = computed(() => {
-    if (!position.value) return [0, 0];
 
-    const [pixelX, pixelY] = mapToPixels(position.value[0], position.value[1]);
+// 计算边界内的位置
+const boundedPixel = (realValue, dimension) => {
+    const containerSize = dimension === 'width' ? container_width.value : container_height.value;
+    const pixelValue = resize2Pixels(realValue, dimension);
+    return Math.min(Math.max(pixelValue, dot_size / 2), containerSize - dot_size / 2);
+};
 
-    const x = Math.min(Math.max(pixelX, dot_size / 2), container_width - dot_size / 2);
-    const y = Math.min(Math.max(pixelY, dot_size / 2), container_height - dot_size / 2);
-
-    return [x, y];
+watchEffect(() => {
+    console.log('position:', position.value);
+    console.log('screws:', screws.value);
+    console.log('boundedPixel(0.5, "width"):', boundedPixel(-0.5, 'width'));
+    console.log('resize2Pixels(1, "width"):', resize2Pixels(1, 'width'));
 });
 
-const screws = computed(() => eventBus.state.screws);
 </script>
 
 <style scoped>
 .map-container {
     position: relative;
-    width: 1600px;
-    height: 800px;
     border: 1px solid #ccc;
     background: #f0f0f0;
 }
@@ -71,20 +77,36 @@ const screws = computed(() => eventBus.state.screws);
     background: red;
     border-radius: 50%;
     transform: translate(-50%, 50%);
-    /* 使点的中心对准坐标 */
+}
+
+.screw-wrapper {
+    position: absolute;
+    transform: translate(-50%, 50%);
+}
+
+.screw-allowed-range {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 255, 0.5);
+    background: rgba(0, 0, 255, 0.2);
+    left: 0;
+    bottom: 0;
+    transform: translate(-50%, 50%);
 }
 
 .screw-dot {
     position: absolute;
-    width: 8px;  /* 增加宽度 */
+    width: 8px;
     height: 8px;
     background: blue;
     border-radius: 50%;
+    left: 0;
+    bottom: 0;
     transform: translate(-50%, 50%);
-    text-align: center;  /* 文字居中 */
-    white-space: nowrap;  /* 防止文��换行 */
-    font-size: 12px;  /* 设置字体大小 */
-    color: #333;  /* 文字颜色 */
+    text-align: center;
+    white-space: nowrap;
+    font-size: large;
+    color: #333;
     display: flex;
     align-items: center;
     justify-content: center;

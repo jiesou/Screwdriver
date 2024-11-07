@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-table :columns="columns" :dataSource="eventBus.state.screws" rowKey="tag" :rowClassName="highlightRow" />
+    <a-table :columns="columns" :dataSource="eventBus.state.screws" rowKey="tag" :rowClassName="highlightRow" style="max-width: 720px" />
   </div>
 </template>
 

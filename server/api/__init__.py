@@ -37,7 +37,7 @@ async def start_moving():
 
 @api_bp.route('/simulate_screw_tightening')
 def simulate_screw_tightening():
-    processor_api.current_api.current_processor.is_working = True
+    processor_api.current_api.current_processor.is_working = not processor_api.current_api.current_processor.is_working
     return res(current_app)
 
 @api_bp.route('/reset_desktop_coordinate_system')

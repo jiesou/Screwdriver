@@ -16,6 +16,9 @@ const locale = ref(zhCN)
 
 <style scoped>
 .app-container {
-  margin: 20px; /* 你可以根据需要调整页边距 */
+  margin: 20px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
 }
 </style>
