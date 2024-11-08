@@ -174,7 +174,8 @@ const simulateScrewTightening = () => {
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
     // simulateScrewTightening()
-    resetDesktopCoordinateSystem()
+    // resetDesktopCoordinateSystem()
+    handleResetZAaxes();
   }
 })
 
