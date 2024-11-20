@@ -96,7 +96,7 @@ const handleMoving = async () => {
           if (done) {
             // 如果正常结束，不需要重连
             if (movingState.value.isDoing) {
-              await startStream();
+              throw new Error('流结束');
             } else {
               handleStopMoving();
               message.success('完成');

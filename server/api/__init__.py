@@ -19,7 +19,6 @@ def reset_z_axes():
 @api_bp.route('/start_moving', methods=['POST'])
 async def start_moving():
     processor_api.set_screws(await request.get_json())
-
     def generate():
         yield "{}\n"
         try:
@@ -32,7 +31,12 @@ async def start_moving():
             print("客户端断开连接")
             raise
 
-    return generate()
+    return Response(generate(), headers={
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+        'Content-Type': 'text/event-stream'
+    })
 
 
 @api_bp.route('/simulate_screw_tightening')

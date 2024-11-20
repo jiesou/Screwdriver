@@ -76,14 +76,6 @@ const getRangeColor = (status) => {
             };
     }
 };
-
-watchEffect(() => {
-    console.log('position:', position.value);
-    console.log('screws:', screws.value);
-    console.log('boundedPixel(0.5, "width"):', boundedPixel(-0.5, 'width'));
-    console.log('resize2Pixels(1, "width"):', resize2Pixels(1, 'width'));
-});
-
 </script>
 
 <style scoped>
