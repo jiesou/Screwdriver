@@ -124,7 +124,7 @@ class ProcessorAPI:
             "position": position,
             "located_screw": located_screw,
             "is_screw_tightening": self.current_data["is_working"],
-            "screw_count": completed_count,
+            "screw_count": len(self.current_screw_map.screws) - completed_count,
             "screws": self.current_screw_map.screws
         }
 

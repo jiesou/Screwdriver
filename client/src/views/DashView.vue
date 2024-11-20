@@ -118,6 +118,7 @@ const handleMoving = async () => {
                 state.value = { ...state.value, ...newState };
                 eventBus.locatedScrew = state.value.located_screw;
                 eventBus.counter = state.value.screw_count;
+                console.log(state.value.screw_count)
                 eventBus.state = state.value;
               } catch (e) {
                 console.error('解析数据失败:', e);
