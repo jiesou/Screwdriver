@@ -11,11 +11,14 @@ export async function callApi(path, options) {
         overrideOptions.headers['Content-Type'] = 'application/json'
     }
     return fetch(`http://${window.location.host}/api/${path}`, overrideOptions)
-        .then(response => {
-            return response
+        .then(async response => {
+            if (!response.ok) {
+                throw new Error(`服务器错误: ${response.status}`);
+            }
+            return response;
         })
         .catch(error => {
-            console.error(error)
+            console.error('callApi', error)
             return Promise.reject(error)
         })
 }

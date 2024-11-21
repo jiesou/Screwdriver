@@ -131,7 +131,6 @@ class ProcessorAPI:
     def handle_start_moving(self):
         while True:
             data_snippet = self.requirement_analyze()
-            print
             time.sleep(1/60)
             yield data_snippet
 

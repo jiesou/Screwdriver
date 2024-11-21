@@ -29,11 +29,15 @@
 </template>
 
 <script setup>
-import { computed, watchEffect, ref } from 'vue';
-import eventBus from '@/units/eventBus';
+import { computed, ref } from 'vue';
 
-const position = computed(() => eventBus.state.position);
-const screws = computed(() => eventBus.state.screws);
+const props = defineProps({
+    position: Object,
+    screws: Array
+});
+
+const position = computed(() => props.position);
+const screws = computed(() => props.screws);
 
 // 物理和显示尺寸常量
 const physics_width = 2;
