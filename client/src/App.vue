@@ -2,7 +2,7 @@
   <a-config-provider :locale="locale">
     <a-affix :offset-top=1>
       <a-alert 
-        :message="'服务连接状态: ' + (eventBus.serverConnected ? '已连接' : '未连接')" 
+        :message="'服务连接状态: ' + (eventBus.serverConnected ? '已连接' : '正在连接……')" 
         :type="eventBus.serverConnected ? 'success' : 'error'"
         banner
       />

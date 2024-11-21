@@ -61,3 +61,27 @@ def current_data():
         return "Data received", 200
     except json.JSONDecodeError:
         return json.dumps({}), 400
+
+@api_bp.route('/start_record', methods=['POST'])
+async def start_record():
+    def generate():
+        yield "{}\n"
+        try:
+            for data_snippet in processor_api.handle_start_moving():
+                # 只需要位置和是否拧螺丝两个状态
+                yield json.dumps({
+                    "position": data_snippet["position"],
+                    "is_screw_tightening": data_snippet["is_screw_tightening"]
+                }) + "\n"
+        except Exception:
+            traceback.print_exc()
+        except GeneratorExit:
+            print("客户端断开连接")
+            raise
+
+    return Response(generate(), headers={
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+        'Content-Type': 'text/event-stream'
+    })

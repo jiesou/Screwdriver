@@ -64,6 +64,16 @@ const movingState = ref({
   isDoing: false,
   reader: null
 })
+
+const readWithTimeout = async () => {
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('延迟超出预期')), 200); // 200毫秒超时
+  });
+  return Promise.race([
+    movingState.value.reader.read(),
+    timeoutPromise
+  ]);
+};
 const handleStopMoving = () => {
   movingState.value.isDoing = false;
   if (movingState.value.reader) movingState.value.reader.cancel();
@@ -87,7 +97,7 @@ const handleMoving = async () => {
       let buffer = '';
 
       while (true) {
-        const { done, value } = await movingState.value.reader.read();
+        const { done, value } = await readWithTimeout();
 
         if (done) {
           if (movingState.value.isDoing) {

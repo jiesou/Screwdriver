@@ -106,7 +106,6 @@ const getRangeColor = (status) => {
 .screw-allowed-range {
     position: absolute;
     border-radius: 50%;
-    border: 2px solid;  /* 移除固定颜色 */
     left: 0;
     bottom: 0;
     transform: translate(-50%, 50%);
