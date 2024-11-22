@@ -109,6 +109,8 @@ class ProcessorAPI:
                 completed_count += 1
                 if completed_count >= len(self.current_screw_map.screws):
                     self.current_screw_map = copy.deepcopy(self.screw_map)
+                    # 防止“拧紧螺丝状态”继承到下一个产品，而直接将同位螺丝拧下
+                    self.current_api.current_processor.is_working = False
                     break
                 continue
             screw["status"] = "等待中"

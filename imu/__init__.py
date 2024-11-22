@@ -9,7 +9,7 @@ class IMUProcessor:
 
         self.screw_tightening = False
         self.h = 1  # 固定高度为1米
-        self.center_point = [0.4, 1.4]  # 添加模拟中心点坐标
+        self.center_point = [1, 1]  # 添加模拟中心点坐标
 
     def at_initial_position(self, data):
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0

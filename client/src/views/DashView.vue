@@ -140,7 +140,7 @@ const simulateScrewTighteningState = ref({
 })
 const simulateScrewTightening = () => {
   simulateScrewTighteningState.value.loading = true
-  callApi('simulate_screw_tightening').then(() => {
+  callApi('screw_tightening').then(() => {
     simulateScrewTighteningState.value.loading = false
     message.success('模拟拧螺丝成功')
   }).catch(err => {

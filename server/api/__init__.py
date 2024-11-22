@@ -38,12 +38,6 @@ async def start_moving():
         'Content-Type': 'text/event-stream'
     })
 
-
-@api_bp.route('/simulate_screw_tightening')
-def simulate_screw_tightening():
-    processor_api.current_api.current_processor.is_working = not processor_api.current_api.current_processor.is_working
-    return res(current_app)
-
 @api_bp.route('/reset_desktop_coordinate_system')
 def reset_desktop_coordinate_system():
     processor_api.handle_reset_desktop_coordinate_system()
@@ -53,14 +47,11 @@ def reset_desktop_coordinate_system():
 def screw_data():
     return res(current_app, processor_api.screw_map.screws)
 
-@api_bp.route('/screw_tightening', methods=['POST'])
-def current_data():
-    try:
-        data = request.data.decode('utf-8')
-        processor_api.current_api.current_processor.is_working = True
-        return "Data received", 200
-    except json.JSONDecodeError:
-        return json.dumps({}), 400
+@api_bp.route('/screw_tightening')
+def screw_tightening():
+    print(11)
+    processor_api.current_api.current_processor.is_working = not processor_api.current_api.current_processor.is_working
+    return res(current_app, None)
 
 @api_bp.route('/start_record', methods=['POST'])
 async def start_record():

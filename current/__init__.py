@@ -5,22 +5,19 @@ class CurrentProcessor:
     def __init__(self):
         self.is_working = False
         self.threshold = 15.0
-        self.appliance_on = False  # 用于跟踪设备状态
 
     def parse_data(self):
         for data in read_data():
             if data is None:
                 yield {
-                    "is_working": False
+                    'is_working': self.is_working is True,
                 }
                 continue
             frequency = data['frequency']
-            if frequency > self.threshold and not self.appliance_on:
+            if frequency > self.threshold and not self.is_working:
                 self.is_working = True
-                self.appliance_on = True
-            elif frequency <= self.threshold and self.appliance_on:
+            elif frequency <= self.threshold and self.is_working:
                 self.is_working = False
-                self.appliance_on = False
             yield {
                 "is_working": self.is_working is True,
             }
