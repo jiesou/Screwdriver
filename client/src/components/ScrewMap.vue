@@ -87,6 +87,8 @@ const getRangeColor = (status) => {
     position: relative;
     border: 1px solid #ccc;
     background: #f0f0f0;
+    flex-shrink: 0;
+    /* 防止被压缩 */
 }
 
 .position-dot {
@@ -100,13 +102,11 @@ const getRangeColor = (status) => {
 
 .screw-wrapper {
     position: absolute;
-    transform: translate(-50%, 50%);
 }
 
 .screw-allowed-range {
     position: absolute;
     border-radius: 50%;
-    left: 0;
     bottom: 0;
     transform: translate(-50%, 50%);
 }
@@ -117,13 +117,11 @@ const getRangeColor = (status) => {
     height: 8px;
     background: blue;
     border-radius: 50%;
-    left: 0;
     bottom: 0;
     transform: translate(-50%, 50%);
     text-align: center;
     white-space: nowrap;
-    font-size: large;
-    color: #333;
+    font-size:xx-large;
     display: flex;
     align-items: center;
     justify-content: center;

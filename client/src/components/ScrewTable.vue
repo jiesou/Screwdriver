@@ -1,12 +1,14 @@
 <template>
   <div>
-    <a-table :columns="columns" :dataSource="eventBus.state.screws" rowKey="tag" :rowClassName="highlightRow" style="max-width: 720px" />
+    <a-table :columns="columns" :dataSource="props.screws" rowKey="tag" :rowClassName="highlightRow" style="max-width: 720px" />
   </div>
 </template>
 
 <script setup>
-import { watch } from 'vue'
-import eventBus from '@/units/eventBus';
+
+const props = defineProps({
+    screws: Array
+});
 
 const columns = [
   { title: '序号', dataIndex: 'tag', key: 'tag' },
