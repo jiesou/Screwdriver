@@ -4,6 +4,10 @@
   <a-flex>
     <div style="margin-right: 15px;">
       <a-flex gap="middle" style="margin-bottom: 20px">
+        <a-button type="primary" danger @click="handleStopMoving" :loading="movingState.loading"
+          v-if="movingState.isDoing">停止</a-button>
+        <a-button type="primary" @click="handleMoving" :loading="movingState.loading" v-else>开始</a-button>
+        
         <a-button type="primary" @click="showAddModal" :disabled="isRecording">添加产品</a-button>
         <a-button type="primary" danger @click="stopRecording" v-if="isRecording">停止记录</a-button>
       </a-flex>
@@ -34,9 +38,9 @@
     </div>
   </a-flex>
 
-  <a-modal v-model:open="addModalVisible" title="添加产品" @ok="startRecord" :confirmLoading="recordingState.loading">
+  <a-modal v-if="newProduct" title="添加产品" @ok="startRecord" :confirmLoading="movingState.loading">
     <a-form :model="newProduct">
-      <a-form-item label="产品名称">
+      <a-form-item name="name" label="产品名称">
         <a-input v-model:value="newProduct.name" />
       </a-form-item>
     </a-form>
@@ -52,6 +56,7 @@ import { ref } from 'vue';
 import { message } from 'ant-design-vue';
 import { callApi } from '@/units/api';
 import ScrewMap from '@/components/ScrewMap.vue';
+import { Streamer } from '@/units/stream';
 
 const columns = [
   { title: '产品名称', dataIndex: 'name', key: 'name' },
@@ -60,21 +65,41 @@ const columns = [
 ];
 
 const products = ref([]);
-const addModalVisible = ref(false);
+const newProduct = ref(null);
 const viewModalVisible = ref(false);
 const currentProduct = ref({});
 const isRecording = ref(false);
 
-const newProduct = ref({
-  name: '',
-  screws: []
+const state = ref({})
+
+const streamer = new Streamer({
+  onData: (data) => {
+    currentPosition.value = data.position;
+    
+    if (data.is_working) {
+      const newScrew = {
+        tag: movingState.value.screwPositions.length + 1,
+        position: {
+          x: data.position[0],
+          y: data.position[1],
+          allowOffset: 0.1
+        }
+      };
+      movingState.value.screwPositions.push(newScrew);
+      displayScrews.value = movingState.value.screwPositions;
+      screwsJson.value = JSON.stringify(displayScrews.value, null, 2);
+    }
+  },
+  onError: (msg, error) => {
+    console.error(msg, error);
+    message.error('记录失败：' + error);
+  }
 });
 
-const recordingState = ref({
-  loading: false,
-  reader: null,
-  screwPositions: []
-});
+const movingState = ref({
+  screwPositions: [],
+  ...streamer.eventState
+})
 
 const screwsJson = ref('[]');
 const currentPosition = ref(null);
@@ -85,7 +110,7 @@ const showAddModal = () => {
     name: '',
     screws: []
   };
-  addModalVisible.value = true;
+  newProduct.value = true;
 };
 
 const startRecord = async () => {
@@ -94,72 +119,27 @@ const startRecord = async () => {
     return;
   }
 
-  recordingState.value.loading = true;
+  movingState.value.screwPositions = [];
   isRecording.value = true;
-  recordingState.value.screwPositions = [];
-  addModalVisible.value = false;
+  newProduct.value = false;
 
-  try {
-    const response = await callApi('start_record', {
-      method: 'POST'
-    });
-
-    recordingState.value.reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { done, value } = await recordingState.value.reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const parts = buffer.split('\n');
-      buffer = parts.pop();
-
-      for (const part of parts) {
-        if (!part) continue;
-        try {
-          const data = JSON.parse(part);
-          currentPosition.value = data.position;
-          
-          if (data.is_working) {
-            const newScrew = {
-              tag: recordingState.value.screwPositions.length + 1,
-              position: {
-                x: data.position[0],
-                y: data.position[1],
-                allowOffset: 0.1
-              }
-            };
-            recordingState.value.screwPositions.push(newScrew);
-            displayScrews.value = recordingState.value.screwPositions;
-            screwsJson.value = JSON.stringify(displayScrews.value, null, 2);
-          }
-        } catch (e) {
-          console.error('解析数据失败:', e);
-        }
-      }
-    }
-  } catch (error) {
-    message.error('记录失败：' + error);
-  }
+  await streamer.start('start_record', {
+    method: 'POST'
+  });
 };
 
 const stopRecording = async () => {
-  if (recordingState.value.reader) {
-    recordingState.value.reader.cancel();
-  }
+  streamer.stop();
   
   const product = {
     id: Date.now(),
     name: newProduct.value.name,
-    screws: recordingState.value.screwPositions,
-    screwCount: recordingState.value.screwPositions.length
+    screws: movingState.value.screwPositions,
+    screwCount: movingState.value.screwPositions.length
   };
   
   products.value.push(product);
   isRecording.value = false;
-  recordingState.value.loading = false;
   cleanup();
   message.success('记录完成');
 };

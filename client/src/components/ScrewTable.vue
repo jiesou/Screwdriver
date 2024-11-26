@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-table :columns="columns" :dataSource="props.screws" rowKey="tag" :rowClassName="highlightRow" style="max-width: 720px" />
+    <a-table :columns="columns" :dataSource="props.screws" rowKey="tag" style="min-width: 520px; max-width: 520px" />
   </div>
 </template>
 
@@ -18,27 +18,7 @@ const columns = [
   { title: '允许偏差', dataIndex: ['position', 'allowOffset'], key: 'allowOffset', customRender: ({ text }) => `${text * 100} cm` }
 ]
 
-// watch(() => eventBus.locatedScrew, (newScrew) => {
-//   if (!newScrew) return
-//   eventBus.initScrews.forEach(screw => {
-//     if (screw.tag === newScrew.tag) {
-//       screw.status = 'highlight'
-//     } else {
-//       screw.status = ''
-//     }
-//   })
-// })
-
-
-// 定义一个方法来动态应用高亮类
-const highlightRow = (record) => {
-  return record.status === 'highlight' ? 'highlight' : ''
-}
 </script>
 
 <style scoped>
-.highlight {
-  background-color: yellow;
-  /* 你可以根据需要调整样式 */
-}
 </style>
