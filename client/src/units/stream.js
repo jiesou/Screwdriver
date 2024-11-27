@@ -32,7 +32,7 @@ export class Streamer {
             const response = await callApi('start_moving', {
                 method: 'POST',
                 body: {
-                    screws: eventBus.initScrews,
+                    screws: config.init_screws,
                     h: config.imu_vertical_h,
                     center_point: config.imu_center_point,
                 }
