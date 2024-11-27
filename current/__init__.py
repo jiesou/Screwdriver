@@ -25,8 +25,8 @@ class CurrentProcessor:
 
 class CurrentAPI:
     def __init__(self):
-        self.current_processor = CurrentProcessor()
+        self.processor = CurrentProcessor()
 
     def handle_start(self):
-        yield from self.current_processor.parse_data()
+        yield from self.processor.parse_data()
 

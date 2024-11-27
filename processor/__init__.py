@@ -96,7 +96,7 @@ class ProcessorAPI:
         #         ]
         #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
                 
-        position = self.imu_api.imu_processor.positions[-1]
+        position = self.imu_api.processor.positions[-1]
         located_screw = self.current_screw_map.locate_closest_screw(
             position,
             self.current_screw_map.filter_screws_in_range(position)
@@ -110,7 +110,7 @@ class ProcessorAPI:
                 if completed_count >= len(self.current_screw_map.screws):
                     self.current_screw_map = copy.deepcopy(self.screw_map)
                     # 防止“拧紧螺丝状态”继承到下一个产品，而直接将同位螺丝拧下
-                    self.current_api.current_processor.is_working = False
+                    self.current_api.processor.is_working = False
                     break
                 continue
             screw["status"] = "等待中"
@@ -137,4 +137,4 @@ class ProcessorAPI:
             yield data_snippet
 
     def handle_reset_desktop_coordinate_system(self):
-        self.imu_api.imu_processor.positions = [[0, 0, 0]]
+        self.imu_api.processor.positions = [[0, 0, 0]]

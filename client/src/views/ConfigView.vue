@@ -14,15 +14,15 @@
         </a-form-item>
 
         <a-form-item label="垂直参考中心X坐标(米)">
-          <a-slider v-model:value="config.centerX" :step="0.1" :precision="2" style="width: 200px" />
+          <a-slider v-model:value="config.imu_center_point[0]" :step="0.1" :min="0" :max="4" style="width: 200px" />
         </a-form-item>
 
         <a-form-item label="垂直参考中心Y坐标(米)">
-          <a-slider v-model:value="config.centerY" :step="0.1" :precision="2" style="width: 200px" />
+          <a-slider v-model:value="config.imu_center_point[1]" :step="0.1" :min="0" :max="4" style="width: 200px" />
         </a-form-item>
 
         <a-form-item label="位置单元垂直距离(米)">
-          <a-slider v-model:value="config.unitDistance" :step="0.1" :precision="2" style="width: 200px" />
+          <a-slider v-model:value="config.imu_vertical_h" :step="0.1" :min="0" :max="1.5" style="width: 200px" />
         </a-form-item>
       </a-form>
     </div>

@@ -18,7 +18,10 @@ def reset_z_axes():
 
 @api_bp.route('/start_moving', methods=['POST'])
 async def start_moving():
-    processor_api.set_screws(await request.get_json())
+    data = await request.get_json()
+    processor_api.set_screws(data['screws'])
+    processor_api.imu_api.processor.h = data['h']
+    processor_api.imu_api.processor.center_point = data['center_point']
     def generate():
         yield "{}\n"
         try:
@@ -50,7 +53,7 @@ def screw_data():
 @api_bp.route('/screw_tightening')
 def screw_tightening():
     print(11)
-    processor_api.current_api.current_processor.is_working = not processor_api.current_api.current_processor.is_working
+    processor_api.current_api.processor.is_working = not processor_api.current_api.processor.is_working
     return res(current_app, None)
 
 @api_bp.route('/start_record', methods=['POST'])

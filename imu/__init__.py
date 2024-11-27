@@ -2,14 +2,13 @@ import numpy as np
 from .communication import read_data
 
 class IMUProcessor:
-    def __init__(self):
+    h = 1
+    center_point = [1, 1]
 
+    def __init__(self):
         self.positions = [[0, 0, 0]]
         self.standing = [0, 0, 0]
-
         self.screw_tightening = False
-        self.h = 1  # 固定高度为1米
-        self.center_point = [1, 1]  # 添加模拟中心点坐标
 
     def at_initial_position(self, data):
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
@@ -62,7 +61,7 @@ class IMUProcessor:
 
 class ImuAPI:
     def __init__(self):
-        self.imu_processor = IMUProcessor()
+        self.processor = IMUProcessor()
 
     def handle_start(self):
-        yield from self.imu_processor.parse_data()
+        yield from self.processor.parse_data()

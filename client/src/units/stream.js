@@ -1,6 +1,7 @@
-import { reactive, ref } from "vue";
+import { reactive } from "vue";
 
 import { callApi } from "./api";
+import config from "./config";
 import eventBus from "./eventBus";
 
 async function readWithTimeout(reader, timeoutMs) {
@@ -30,7 +31,11 @@ export class Streamer {
         try {
             const response = await callApi('start_moving', {
                 method: 'POST',
-                body: eventBus.initScrews
+                body: {
+                    screws: eventBus.initScrews,
+                    h: config.imu_vertical_h,
+                    center_point: config.imu_center_point,
+                }
             });
             this.eventState.loading = false;
             this.eventState.isDoing = true;
@@ -71,7 +76,7 @@ export class Streamer {
             await new Promise(resolve => setTimeout(resolve, 100));
             await this.startStream();
         }
-    };
+    }
 
     start() {
         this.eventState.loading = true;
