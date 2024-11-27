@@ -79,8 +79,9 @@ export class Streamer {
     }
 
     stop() {
-        this.eventState.isDoing = false;
         if (this.reader) this.reader.cancel();
+        this.eventState.isDoing = false;
+        eventBus.serverConnected = false;
         return '已停止';
     }
 }

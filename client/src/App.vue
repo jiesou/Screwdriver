@@ -98,7 +98,7 @@ window.addEventListener('keydown', (event) => {
 })
 
 onMounted(() => {
-  handleMoving()
+  // handleMoving()
 })
 </script>
 

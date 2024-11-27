@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "ant-design-vue": "^4.2.3",
+    "plotly.js-dist": "^2.35.2",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3"
   },

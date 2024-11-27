@@ -1,129 +1,137 @@
 <template>
-    <div class="map-container" :style="{
-        width: container_width + 'px',
-        height: container_height + 'px'
-    }">
-        <div v-if="position" class="position-dot" :style="{
-            left: `${boundedPixel(position[0], 'width')}px`,
-            bottom: `${boundedPixel(position[1], 'height')}px`
-        }">{{
-            `${(position[0] * 100).toFixed(1)}cm\n${(position[1] * 100).toFixed(1)}cm`
-            }}</div>
-
-        <div v-for="screw in screws" :key="screw.tag" class="screw-wrapper" :style="{
-            left: `${boundedPixel(screw.position.x, 'width')}px`,
-            bottom: `${boundedPixel(screw.position.y, 'height')}px`
-        }">
-            <div class="screw-dot">
-                {{ screw.tag }}
-            </div>
-            <div class="screw-allowed-range" :style="{
-                width: `${resize2Pixels(screw.position.allowOffset * 2, 'width')}px`,
-                height: `${resize2Pixels(screw.position.allowOffset * 2, 'height')}px`,
-                borderColor: getRangeColor(screw.status).border,
-                background: getRangeColor(screw.status).background
-            }">
-            </div>
-        </div>
-    </div>
+    <div ref="plotlyContainer" class="map-container"></div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import Plotly from 'plotly.js-dist';
+
+import config from '@/units/config';
 
 const props = defineProps({
     position: Object,
     screws: Array
 });
 
-const position = computed(() => props.position);
-const screws = computed(() => props.screws);
+const plotlyContainer = ref(null);
 
-// 物理和显示尺寸常量
-const physics_width = 2;
-const physics_height = 2;
-const container_width = ref(800);
-const container_height = ref(800);
-const dot_size = 10;
-
-const resize2Pixels = (realSize, dimension) => {
-    const containerSize = dimension === 'width' ? container_width.value : container_height.value;
-    const physicsSize = dimension === 'width' ? physics_width : physics_height;
-    return (realSize / physicsSize) * containerSize;
-};
-
-
-// 计算边界内的位置
-const boundedPixel = (realValue, dimension) => {
-    const containerSize = dimension === 'width' ? container_width.value : container_height.value;
-    const pixelValue = resize2Pixels(realValue, dimension);
-    return Math.min(Math.max(pixelValue, dot_size / 2), containerSize - dot_size / 2);
-};
-
-// 根据状态获取颜色
 const getRangeColor = (status) => {
     switch (status) {
         case '已定位':
-            return {
-                border: 'rgba(255, 255, 0, 0.5)',
-                background: 'rgba(255, 255, 0, 0.2)'
-            };
+            return 'rgba(255, 255, 0, 0.2)';
         case '已完成':
-            return {
-                border: 'rgba(0, 255, 0, 0.5)',
-                background: 'rgba(0, 255, 0, 0.2)'
-            };
+            return 'rgba(0, 255, 0, 0.2)';
         default:
-            return {
-                border: 'rgba(0, 0, 255, 0.5)',
-                background: 'rgba(0, 0, 255, 0.2)'
-            };
+            return 'rgba(0, 0, 255, 0.2)';
     }
 };
+
+const updateMapRange = () => {
+    Plotly.relayout(plotlyContainer.value, {
+        xaxis: {
+            range: [0, config.map_physics_width],
+            scaleratio: 1,
+            constrain: 'domain'
+        },
+        yaxis: {
+            range: [0, config.map_physics_height],
+            scaleratio: 1,
+            scaleanchor: 'x'
+        }
+    });
+};
+
+const initPlot = () => {
+    const data = [
+        // 螺丝点图层
+        {
+            mode: 'markers+text',
+            type: 'scattergl',
+            text: props.screws.map(screw => screw.tag),
+            textposition: 'top center',
+            marker: { size: 12, color: 'blue' },
+            name: 'screws'
+        },
+        // 位置点图层
+        {
+            mode: 'markers',
+            type: 'scattergl',
+            marker: { size: 8, color: 'red' },
+            name: 'position'
+        }
+    ];
+
+    Plotly.newPlot(plotlyContainer.value, data, {
+        autosize: true,
+        margin: {
+            l: 80,
+            r: 80,
+            t: 80,
+            b: 80
+        }
+    }, { responsive: true });
+    
+    // 初始化完成后设置范围
+    updateMapRange();
+};
+
+const updatePosition = (newPosition) => {
+    if (!newPosition) return;
+    
+    Plotly.restyle(plotlyContainer.value, {
+        x: [[newPosition[0]]],
+        y: [[newPosition[1]]]
+    }, [1]);
+    // 只更新第1个数据集（位置点）
+};
+
+const updateScrews = (newScrews) => {
+    const update = {
+        x: [newScrews.map(screw => screw.position.x)],
+        y: [newScrews.map(screw => screw.position.y)],
+        text: [newScrews.map(screw => screw.tag)]
+    };
+
+    Plotly.restyle(plotlyContainer.value, update, [0]);
+    // 只更新第0个数据集（螺丝点）
+    
+    // 更新形状
+    Plotly.relayout(plotlyContainer.value, {
+        shapes: newScrews.map(screw => ({
+            type: 'circle',
+            x0: (screw.position.x - screw.position.allowOffset),
+            y0: (screw.position.y - screw.position.allowOffset),
+            x1: (screw.position.x + screw.position.allowOffset),
+            y1: (screw.position.y + screw.position.allowOffset),
+            fillcolor: getRangeColor(screw.status),
+            line: { color: getRangeColor(screw.status) },
+            opacity: 0.5
+        }))
+    });
+};
+
+onMounted(() => {
+    initPlot();
+});
+
+// 分别监听位置和螺丝的更新
+watch(() => props.position, (newPosition) => {
+    updatePosition(newPosition);
+});
+
+watch(() => props.screws, (newScrews) => {
+    updateScrews(newScrews);
+}, { deep: true });
+
+// 监听地图尺寸配置的变化
+watch(() => [config.map_physics_width, config.map_physics_height], () => {
+    updateMapRange();
+});
 </script>
 
 <style scoped>
 .map-container {
-    position: relative;
-    border: 1px solid #ccc;
-    background: #f0f0f0;
-    flex-shrink: 0;
-    /* 防止被压缩 */
-}
-
-.position-dot {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: red;
-    border-radius: 50%;
-    transform: translate(-50%, 50%);
-}
-
-.screw-wrapper {
-    position: absolute;
-}
-
-.screw-allowed-range {
-    position: absolute;
-    border-radius: 50%;
-    bottom: 0;
-    transform: translate(-50%, 50%);
-}
-
-.screw-dot {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: blue;
-    border-radius: 50%;
-    bottom: 0;
-    transform: translate(-50%, 50%);
-    text-align: center;
-    white-space: nowrap;
-    font-size:xx-large;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 800px;
+    width: 100%;
 }
 </style>

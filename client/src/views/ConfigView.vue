@@ -4,89 +4,40 @@
   </a-typography-title>
   <a-flex gap="middle">
     <div style="flex: 1;">
-      <a-form :model="mapConfig" layout="vertical">
-        <a-form-item label="地图宽度(像素)">
-          <a-input-number 
-            v-model:value="mapConfig.width" 
-            :min="500" 
-            :max="2000"
-            style="width: 200px"
-          />
-        </a-form-item>
-        
-        <a-form-item label="地图高度(像素)">
-          <a-input-number 
-            v-model:value="mapConfig.height" 
-            :min="500" 
-            :max="2000"
-            style="width: 200px"
-          />
+      <a-form :model="config" layout="vertical">
+        <a-form-item label="物理地图宽度(米)">
+          <a-slider v-model:value="config.map_physics_width" :min="0.1" :max="10" :step="0.1" />
         </a-form-item>
 
-        <a-form-item label="地图中心X坐标(米)">
-          <a-input-number 
-            v-model:value="mapConfig.centerX" 
-            :step="0.1"
-            :precision="2"
-            style="width: 200px"
-          />
+        <a-form-item label="物理地图高度(米)">
+          <a-slider v-model:value="config.map_physics_height" :min="0.1" :max="10" :step="0.1" />
         </a-form-item>
 
-        <a-form-item label="地图中心Y坐标(米)">
-          <a-input-number 
-            v-model:value="mapConfig.centerY" 
-            :step="0.1"
-            :precision="2"
-            style="width: 200px"
-          />
+        <a-form-item label="垂直参考中心X坐标(米)">
+          <a-slider v-model:value="config.centerX" :step="0.1" :precision="2" style="width: 200px" />
+        </a-form-item>
+
+        <a-form-item label="垂直参考中心Y坐标(米)">
+          <a-slider v-model:value="config.centerY" :step="0.1" :precision="2" style="width: 200px" />
         </a-form-item>
 
         <a-form-item label="位置单元垂直距离(米)">
-          <a-input-number 
-            v-model:value="mapConfig.unitDistance" 
-            :step="0.1"
-            :precision="2"
-            style="width: 200px"
-          />
+          <a-slider v-model:value="config.unitDistance" :step="0.1" :precision="2" style="width: 200px" />
         </a-form-item>
       </a-form>
     </div>
     <div style="flex: 2;">
-      <ScrewMap 
-        :screws="mockScrews" 
-        :position="mockPosition"
-        :container_width="mapConfig.width"
-        :container_height="mapConfig.height"
-      />
+      <ScrewMap :screws="[]" :position="eventBus.movingStreamer.state.position" />
     </div>
   </a-flex>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import config from '@/units/config';
 import ScrewMap from '@/components/ScrewMap.vue';
+import eventBus from '@/units/eventBus';
 
-const mapConfig = ref({
-  width: 800,
-  height: 600,
-  centerX: 0,
-  centerY: 0,
-  unitDistance: 1.0
-});
-
-// 用于测试显示的模拟数据
-const mockScrews = ref([
-  {
-    tag: "1",
-    position: {
-      x: 0.5,
-      y: 0.5,
-      allowOffset: 0.1
-    }
-  }
-]);
-
-const mockPosition = ref([0, 0]);
 </script>
 
 <style scoped>
