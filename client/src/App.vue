@@ -93,7 +93,8 @@ const handleStopMoving = () => message.info(eventBus.movingStreamer.stop())
 // 快捷键处理
 window.addEventListener('keydown', (event) => {
   if (event.code === 'Space') {
-    operate({ key: 'simulateScrew' })
+    message.info('重置Z轴角')
+    operate({ key: 'resetZAxes' })
   }
 })
 

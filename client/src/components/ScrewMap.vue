@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, onBeforeUnmount } from 'vue';
 import Plotly from 'plotly.js-dist';
 
 import config from '@/units/config';
@@ -14,6 +14,7 @@ const props = defineProps({
 });
 
 const plotlyContainer = ref(null);
+const plotInstance = ref(null);
 
 const getRangeColor = (status) => {
     switch (status) {
@@ -24,6 +25,50 @@ const getRangeColor = (status) => {
         default:
             return 'rgba(0, 0, 255, 0.2)';
     }
+};
+
+// 清理 Plotly 实例
+const cleanupPlot = () => {
+    if (plotlyContainer.value) {
+        Plotly.purge(plotlyContainer.value);
+        plotInstance.value = null;
+    }
+};
+
+// 直接更新螺丝位置
+const updateScrews = (newScrews) => {
+    if (!plotlyContainer.value) return;
+    
+    const update = {
+        x: [newScrews.map(screw => screw.position.x)],
+        y: [newScrews.map(screw => screw.position.y)],
+        text: [newScrews.map(screw => screw.tag)]
+    };
+
+    Plotly.restyle(plotlyContainer.value, update, [0]);
+    
+    const shapes = newScrews.map(screw => ({
+        type: 'circle',
+        x0: (screw.position.x - screw.position.allowOffset),
+        y0: (screw.position.y - screw.position.allowOffset),
+        x1: (screw.position.x + screw.position.allowOffset),
+        y1: (screw.position.y + screw.position.allowOffset),
+        fillcolor: getRangeColor(screw.status),
+        line: { color: getRangeColor(screw.status) },
+        opacity: 0.5
+    }));
+
+    Plotly.relayout(plotlyContainer.value, { shapes });
+};
+
+// 直接更新位置
+const updatePosition = (newPosition) => {
+    if (!newPosition || !plotlyContainer.value) return;
+    
+    Plotly.restyle(plotlyContainer.value, {
+        x: [[newPosition[0]]],
+        y: [[newPosition[1]]]
+    }, [1]);
 };
 
 const updateMapRange = () => {
@@ -42,6 +87,8 @@ const updateMapRange = () => {
 };
 
 const initPlot = () => {
+    cleanupPlot(); // 初始化前先清理
+
     const data = [
         // 螺丝点图层
         {
@@ -73,48 +120,16 @@ const initPlot = () => {
     
     // 初始化完成后设置范围
     updateMapRange();
+
+    plotInstance.value = true;
 };
 
-const updatePosition = (newPosition) => {
-    if (!newPosition) return;
-    
-    Plotly.restyle(plotlyContainer.value, {
-        x: [[newPosition[0]]],
-        y: [[newPosition[1]]]
-    }, [1]);
-    // 只更新第1个数据集（位置点）
-};
-
-const updateScrews = (newScrews) => {
-    const update = {
-        x: [newScrews.map(screw => screw.position.x)],
-        y: [newScrews.map(screw => screw.position.y)],
-        text: [newScrews.map(screw => screw.tag)]
-    };
-
-    Plotly.restyle(plotlyContainer.value, update, [0]);
-    // 只更新第0个数据集（螺丝点）
-    
-    // 更新形状
-    Plotly.relayout(plotlyContainer.value, {
-        shapes: newScrews.map(screw => ({
-            type: 'circle',
-            x0: (screw.position.x - screw.position.allowOffset),
-            y0: (screw.position.y - screw.position.allowOffset),
-            x1: (screw.position.x + screw.position.allowOffset),
-            y1: (screw.position.y + screw.position.allowOffset),
-            fillcolor: getRangeColor(screw.status),
-            line: { color: getRangeColor(screw.status) },
-            opacity: 0.5
-        }))
-    });
-};
-
-onMounted(() => {
-    initPlot();
+// 组件卸载时清理资源
+onBeforeUnmount(() => {
+    cleanupPlot();
 });
 
-// 分别监听位置和螺丝的更新
+// 直接使用更新函数
 watch(() => props.position, (newPosition) => {
     updatePosition(newPosition);
 });
@@ -127,6 +142,10 @@ watch(() => props.screws, (newScrews) => {
 watch(() => [config.map_physics_width, config.map_physics_height], () => {
     updateMapRange();
 });
+
+onMounted(() => {
+    initPlot();
+})
 </script>
 
 <style scoped>

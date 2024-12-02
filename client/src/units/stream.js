@@ -33,8 +33,8 @@ export class Streamer {
                 method: 'POST',
                 body: {
                     screws: config.init_screws,
-                    h: config.imu_vertical_h,
-                    center_point: config.imu_center_point,
+                    h: config.imu.vertical_h,
+                    center_point: config.imu.center_point,
                 }
             });
             this.eventState.loading = false;
