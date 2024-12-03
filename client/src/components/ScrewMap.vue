@@ -3,9 +3,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, onBeforeUnmount } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import Plotly from 'plotly.js-dist';
-
 import config from '@/units/config';
 
 const props = defineProps({
@@ -14,143 +13,80 @@ const props = defineProps({
 });
 
 const plotlyContainer = ref(null);
-const plotInstance = ref(null);
 
-const getRangeColor = (status) => {
-    switch (status) {
-        case '已定位':
-            return 'rgba(255, 255, 0, 0.2)';
-        case '已完成':
-            return 'rgba(0, 255, 0, 0.2)';
-        default:
-            return 'rgba(0, 0, 255, 0.2)';
-    }
-};
 
-// 清理 Plotly 实例
-const cleanupPlot = () => {
-    if (plotlyContainer.value) {
-        Plotly.purge(plotlyContainer.value);
-        plotInstance.value = null;
-    }
-};
-
-// 直接更新螺丝位置
-const updateScrews = (newScrews) => {
-    if (!plotlyContainer.value) return;
+const updatedData = () => {
     
-    const update = {
-        x: [newScrews.map(screw => screw.position.x)],
-        y: [newScrews.map(screw => screw.position.y)],
-        text: [newScrews.map(screw => screw.tag)]
-    };
-
-    Plotly.restyle(plotlyContainer.value, update, [0]);
-    
-    const shapes = newScrews.map(screw => ({
-        type: 'circle',
-        x0: (screw.position.x - screw.position.allowOffset),
-        y0: (screw.position.y - screw.position.allowOffset),
-        x1: (screw.position.x + screw.position.allowOffset),
-        y1: (screw.position.y + screw.position.allowOffset),
-        fillcolor: getRangeColor(screw.status),
-        line: { color: getRangeColor(screw.status) },
-        opacity: 0.5
-    }));
-
-    Plotly.relayout(plotlyContainer.value, { shapes });
-};
-
-// 直接更新位置
-const updatePosition = (newPosition) => {
-    if (!newPosition || !plotlyContainer.value) return;
-    
-    Plotly.restyle(plotlyContainer.value, {
-        x: [[newPosition[0]]],
-        y: [[newPosition[1]]]
-    }, [1]);
-};
-
-const updateMapRange = () => {
-    Plotly.relayout(plotlyContainer.value, {
-        xaxis: {
-            range: [0, config.map_physics_width],
-            scaleratio: 1,
-            constrain: 'domain'
-        },
-        yaxis: {
-            range: [0, config.map_physics_height],
-            scaleratio: 1,
-            scaleanchor: 'x'
-        }
-    });
-};
-
-const initPlot = () => {
-    cleanupPlot(); // 初始化前先清理
-
-    const data = [
-        // 螺丝点图层
+    return props.screws.map(screw => ({
+        x: Array.from({length: 51}, (_, i) => 
+            screw.position.x + Math.cos(2 * Math.PI * i / 50) * screw.position.allowOffset),
+        y: Array.from({length: 51}, (_, i) => 
+            screw.position.y + Math.sin(2 * Math.PI * i / 50) * screw.position.allowOffset),
+        mode: 'lines',
+        type: 'scattergl',
+        fill: 'toself',
+        fillcolor: {
+            '已定位': 'rgba(255, 255, 0, 1)',
+            '已完成': 'rgba(0, 255, 0, 1)'
+        }[screw.status] || 'rgba(0, 0, 255, 1)',
+        line: { width: 0 },
+        opacity: 0.3,
+        showlegend: false, // 不显示图注
+    })).concat([
         {
+            x: props.screws.map(s => s.position.x),
+            y: props.screws.map(s => s.position.y),
+            text: props.screws.map(s => s.tag),
             mode: 'markers+text',
             type: 'scattergl',
-            text: props.screws.map(screw => screw.tag),
-            textposition: 'top center',
+            textposition: 'top',
             marker: { size: 12, color: 'blue' },
             name: 'screws'
         },
-        // 位置点图层
         {
-            mode: 'markers',
+            x: props.position ? [props.position[0]] : [],
+            y: props.position ? [props.position[1]] : [],
             type: 'scattergl',
             marker: { size: 8, color: 'red' },
             name: 'position'
         }
-    ];
-
-    Plotly.newPlot(plotlyContainer.value, data, {
-        autosize: true,
-        margin: {
-            l: 80,
-            r: 80,
-            t: 80,
-            b: 80
-        }
-    }, { responsive: true });
-    
-    // 初始化完成后设置范围
-    updateMapRange();
-
-    plotInstance.value = true;
+    ]);
 };
 
-// 组件卸载时清理资源
-onBeforeUnmount(() => {
-    cleanupPlot();
+watch(() => props.position, () => {
+    console.log(updatedData())
+    Plotly.purge(plotlyContainer.value);
+    Plotly.react(plotlyContainer.value, updatedData(), layout);
 });
 
-// 直接使用更新函数
-watch(() => props.position, (newPosition) => {
-    updatePosition(newPosition);
-});
+let layout = {
+    autosize: true,
+    margin: { l: 80, r: 80, t: 80, b: 80 },
+    xaxis: {
+        range: [0, config.map_physics_width],
+        scaleratio: 1,
+        constrain: 'domain'
+    },
+    yaxis: {
+        range: [0, config.map_physics_height],
+        scaleratio: 1,
+        scaleanchor: 'domain'
+    }
+};
 
-watch(() => props.screws, (newScrews) => {
-    updateScrews(newScrews);
-}, { deep: true });
-
-// 监听地图尺寸配置的变化
 watch(() => [config.map_physics_width, config.map_physics_height], () => {
-    updateMapRange();
+    layout.xaxis.range = [0, config.map_physics_width];
+    layout.yaxis.range = [0, config.map_physics_height];
+    Plotly.react(plotlyContainer.value, [], layout);
 });
 
 onMounted(() => {
-    initPlot();
-})
+    Plotly.newPlot(plotlyContainer.value, [], layout, { responsive: true });
+});
 </script>
 
 <style scoped>
 .map-container {
     height: 800px;
-    width: 100%;
 }
 </style>
