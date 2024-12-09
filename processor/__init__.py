@@ -125,7 +125,7 @@ class ProcessorAPI:
         return {
             "position": position,
             "located_screw": located_screw,
-            "is_screw_tightening": self.current_data["is_working"],
+            "is_screw_tightening": self.current_data["is_working"] if self.current_data is not None else False,
             "screw_count": len(self.current_screw_map.screws) - completed_count,
             "screws": self.current_screw_map.screws
         }

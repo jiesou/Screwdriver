@@ -1,27 +1,52 @@
-import serial
+import requests
 import json
 import time
 
-def read_data(timeout=1):
-    buffer = ""
-    while True:  # 外层无限循环用于重连
+# 模块级别的全局变量
+response = None
+results = []
+
+def open_connection():
+    global response
+    if response is None:
         try:
-            with serial.Serial("/dev/ttyUSB1", 9600, timeout=timeout) as ser:
-                print("电流检测原件串口已连接")
-                while True:
-                    if ser.in_waiting > 0:
-                        buffer += ser.read(ser.in_waiting).decode('utf-8')
-                        while '\n' in buffer:
-                            line, buffer = buffer.split('\n', 1)
-                            line = line.strip()
-                            if line:
-                                try:
-                                    data = json.loads(line)
-                                    yield data
-                                except json.JSONDecodeError as e:
-                                    print(f"Current JSON decode error: {e} {line}")
-                                    yield None
+            response = requests.get(
+                "http://192.168.11.239/status",
+                stream=True,
+                timeout=(3.05, 27)
+            )
+            response.raise_for_status()
+            print("电流检测原件网络已连接")
         except Exception as e:
-            print(f"电流检测原件串口连接断开，尝试重新连接... {e}")
-            yield None
+            print(f"电流检测原件网络连接失败: {e}")
+            response = None
             time.sleep(1)
+
+# 模块导入时就尝试建立连接
+open_connection()
+
+def read_data():
+    global response, results
+    
+    while True:
+        if not results:
+            if response is None:
+                open_connection()
+                yield None
+                continue
+                
+            try:
+                for line in response.iter_lines(decode_unicode=True):
+                    if line and line.startswith('data: '):
+                        try:
+                            yield json.loads(line[6:])
+                        except json.JSONDecodeError:
+                            continue
+            except Exception as e:
+                print(f"电流检测原件网络连接断开: {e}")
+                response = None
+                yield None
+                continue
+
+        if results:
+            yield results.pop(0)
