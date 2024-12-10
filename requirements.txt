@@ -6,3 +6,4 @@ numpy
 quart
 quart_cors
 scipy
+requests
