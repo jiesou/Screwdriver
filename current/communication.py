@@ -13,14 +13,13 @@ def open_connection():
             response = requests.get(
                 "http://192.168.11.239/status",
                 stream=True,
-                timeout=(3.05, 27)
+                timeout=1
             )
             response.raise_for_status()
             print("电流检测原件网络已连接")
         except Exception as e:
             print(f"电流检测原件网络连接失败: {e}")
             response = None
-            time.sleep(1)
 
 # 模块导入时就尝试建立连接
 open_connection()
