@@ -1,11 +1,13 @@
 <template>
-    <div ref="plotlyContainer" class="map-container"></div>
+    <div>{{ fps_counter }}<div ref="plotlyContainer" class="map-container"></div>
+    </div>
 </template>
 
 <script setup>
 import { onMounted, ref, watch } from 'vue';
 import Plotly from 'plotly.js-dist';
 import config from '@/units/config';
+import eventBus from '@/units/eventBus';
 
 const props = defineProps({
     position: Object,
@@ -14,50 +16,65 @@ const props = defineProps({
 
 const plotlyContainer = ref(null);
 
+const fps_counter = ref(0);
 
-const updatedData = () => {
-    
-    return props.screws.map(screw => ({
-        x: Array.from({length: 51}, (_, i) => 
-            screw.position.x + Math.cos(2 * Math.PI * i / 50) * screw.position.allowOffset),
-        y: Array.from({length: 51}, (_, i) => 
-            screw.position.y + Math.sin(2 * Math.PI * i / 50) * screw.position.allowOffset),
-        mode: 'lines',
-        type: 'scattergl',
-        fill: 'toself',
-        fillcolor: {
-            '已定位': 'rgba(255, 255, 0, 1)',
-            '已完成': 'rgba(0, 255, 0, 1)'
-        }[screw.status] || 'rgba(0, 0, 255, 1)',
-        line: { width: 0 },
-        opacity: 0.3,
-        showlegend: false, // 不显示图注
-    })).concat([
-        {
-            x: props.screws.map(s => s.position.x),
-            y: props.screws.map(s => s.position.y),
-            text: props.screws.map(s => s.tag),
-            mode: 'markers+text',
-            type: 'scattergl',
-            textposition: 'top',
-            marker: { size: 12, color: 'blue' },
-            name: 'screws'
-        },
-        {
-            x: props.position ? [props.position[0]] : [],
-            y: props.position ? [props.position[1]] : [],
-            type: 'scattergl',
-            marker: { size: 8, color: 'red' },
-            name: 'position'
-        }
-    ]);
+// 计算比例系数：像素/米
+const resize2Pixels = (realSize) => {
+    const { container_width, container_height } = plotlyContainer.value.getBoundingClientRect()
+    const containerSize = 800 * 0.8;
+    const physicsSize = config.map_physics_width;
+    return (realSize / physicsSize) * containerSize;
 };
 
-watch(() => props.position, () => {
-    console.log(updatedData())
+const updatedData = () => {
+    // 生成螺丝位置标记数据
+    const screwMarkers = props.screws.map(s => ({
+        x: [s.position.x],
+        y: [s.position.y],
+        mode: 'markers+text',
+        textposition: 'top',
+        type: 'scatter',
+        marker: {
+            size: resize2Pixels(s.position.allowOffset * 2), // 直径需要是 allowOffset 的两倍
+            color: {
+                '已定位': 'rgb(255, 255, 0)',
+                '已完成': 'rgb(0, 255, 0)'
+            }[s.status] || 'rgb(0, 0, 255)',
+            symbol: 'circle',
+        },
+        text: s.tag,
+        textposition: 'top',
+        opacity: 0.3,
+        showlegend: false,
+        name: s.tag
+    }));
+
+    // 生成当前位置标记数据
+    const positionMarker = {
+        x: props.position ? [props.position[0]] : [],
+        y: props.position ? [props.position[1]] : [],
+        type: 'scatter',
+        marker: { size: 8, color: 'red' },
+        showlegend: false,
+        name: 'position'
+    };
+
+    return [...screwMarkers, positionMarker];
+};
+
+let updateLock = false;
+setInterval(() => {
+    if (eventBus.serverConnected === false) return;
+    if (updateLock) return;
+    const startTime = performance.now();
+    updateLock = true;
     Plotly.purge(plotlyContainer.value);
-    Plotly.react(plotlyContainer.value, updatedData(), layout);
-});
+
+    Plotly.react(plotlyContainer.value, updatedData(), layout, { staticPlot: true, displayModeBar: false });
+    updateLock = false;
+
+    fps_counter.value = Math.round(performance.now() - startTime);
+}, 1000 / 60);
 
 let layout = {
     autosize: true,
@@ -77,16 +94,17 @@ let layout = {
 watch(() => [config.map_physics_width, config.map_physics_height], () => {
     layout.xaxis.range = [0, config.map_physics_width];
     layout.yaxis.range = [0, config.map_physics_height];
-    Plotly.react(plotlyContainer.value, [], layout);
+    // Plotly.restyle(plotlyContainer.value, [], layout);
 });
 
 onMounted(() => {
-    Plotly.newPlot(plotlyContainer.value, [], layout, { responsive: true });
+    Plotly.newPlot(plotlyContainer.value, [], layout, { staticPlot: true, displayModeBar: false });
 });
 </script>
 
 <style scoped>
 .map-container {
     height: 800px;
+    width: 800px;
 }
 </style>
