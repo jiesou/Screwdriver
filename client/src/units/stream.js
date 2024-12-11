@@ -15,7 +15,7 @@ async function readWithTimeout(reader, timeoutMs) {
 }
 
 export class Streamer {
-    timeoutMs = 200;
+    timeoutMs = 300;
     reader = null;
     eventState = reactive({
         isDoing: false,
@@ -28,65 +28,63 @@ export class Streamer {
     });
 
     async startStream() {
-        try {
-            const response = await callApi('start_moving', {
-                method: 'POST',
-                body: {
-                    screws: config.init_screws,
-                    h: config.imu.vertical_h,
-                    center_point: config.imu.center_point,
-                }
-            });
-            this.eventState.loading = false;
-            this.eventState.isDoing = true;
-            eventBus.serverConnected = true;
-
-            this.reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await readWithTimeout(this.reader, this.timeoutMs);
-
-                if (done) {
-                    if (this.eventState.isDoing) {
-                        throw new Error('流异常结束');
-                    }
-                    // 手动停止，正常结束
-                    break;
-                }
-
-                buffer += decoder.decode(value, { stream: true });
-                const parts = buffer.split('\n');
-                buffer = parts.pop();
-
-                for (const part of parts) {
-                    if (!part) continue;
-                    try {
-                        const data = JSON.parse(part);
-                        Object.assign(this.state, data);
-                    } catch (error) {
-                        eventBus.serverConnected = false;
-                        throw error;
-                    }
-                }
+    try {
+        const response = await callApi('start_moving', {
+            method: 'POST',
+            body: {
+                screws: config.init_screws,
+                h: config.imu.vertical_h,
+                center_point: config.imu.center_point,
             }
-        } catch (error) {
-            eventBus.serverConnected = false;
-            await new Promise(resolve => setTimeout(resolve, 100));
-            await this.startStream();
+        });
+        this.eventState.loading = false;
+        this.eventState.isDoing = true;
+        eventBus.serverConnected = true;
+
+        this.reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await readWithTimeout(this.reader, this.timeoutMs);
+
+            if (done) {
+                if (this.eventState.isDoing) {
+                    throw new Error('流异常结束');
+                }
+                break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n');
+            buffer = parts.pop();
+
+            for (const part of parts) {
+                if (!part) continue;
+                const data = JSON.parse(part);
+                Object.assign(this.state, data);
+            }
         }
+    } catch(error) {
+        console.error('startStream error:', error);
+        throw error; // 确保错误继续传播
+    }
     }
 
     start() {
         this.eventState.loading = true;
-        this.startStream();
+        this.startStream().catch(error => {
+            console.error('连接错误:', error);
+            eventBus.serverConnected = false;
+            setTimeout(() => this.start(), 300); // 0.1秒后重试
+        });
     }
 
     stop() {
         if (this.reader) this.reader.cancel();
         this.eventState.isDoing = false;
         eventBus.serverConnected = false;
+        console.log('手动停止流');
         return '已停止';
     }
 }

@@ -11,7 +11,7 @@
             <a-button type="primary" :danger="eventBus.movingStreamer.eventState.isDoing"
               @click="eventBus.movingStreamer.eventState.isDoing ? handleStopMoving() : handleMoving()"
               :loading="eventBus.movingStreamer.eventState.loading">
-              {{ eventBus.movingStreamer.eventState.isDoing ? '停止' : '开始' }}
+              {{ eventBus.movingStreamer.eventState.isDoing ? '中断连接' : '连接' }}
             </a-button>
 
             <!-- 操作菜单 -->

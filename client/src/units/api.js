@@ -10,7 +10,7 @@ export async function callApi(path, options) {
         overrideOptions.body = JSON.stringify(overrideOptions.body)
         overrideOptions.headers['Content-Type'] = 'application/json'
     }
-    return fetch(`http://${window.location.host}/api/${path}`, overrideOptions)
+    return fetch(`http://${window.location.hostname}:3000/api/${path}`, overrideOptions)
         .then(async response => {
             if (!response.ok) {
                 throw new Error(`服务器错误: ${response.status}`);
