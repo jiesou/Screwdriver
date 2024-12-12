@@ -41,15 +41,6 @@ async def start_moving():
         'Content-Type': 'text/event-stream'
     })
 
-@api_bp.route('/reset_desktop_coordinate_system')
-def reset_desktop_coordinate_system():
-    processor_api.handle_reset_desktop_coordinate_system()
-    return res(current_app)
-
-@api_bp.route('/screw_data')
-def screw_data():
-    return res(current_app, processor_api.screw_map.screws)
-
 @api_bp.route('/screw_tightening')
 def screw_tightening():
     print(11)

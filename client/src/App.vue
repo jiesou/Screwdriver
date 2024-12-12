@@ -24,6 +24,13 @@
               </a-button>
             </a-dropdown>
 
+            <!--路由按钮-->
+            <RouterLink to="/config">
+              <a-button>
+                系统配置
+              </a-button>
+            </RouterLink>
+
             <!-- 信息显示 -->
             <span style="color: green;">
               <div v-if="eventBus.movingStreamer.state.position" style="color: green;">
@@ -37,11 +44,10 @@
             </span>
           </a-space>
 
-
         </div>
       </a-affix>
     </a-layout>
-      <RouterView />
+    <RouterView />
   </a-config-provider>
 </template>
 
@@ -52,6 +58,7 @@ import { message } from 'ant-design-vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import eventBus from '@/units/eventBus'
 import { callApi } from '@/units/api'
+import config from './units/config'
 
 // 定义操作配置
 const operations = [
@@ -64,8 +71,7 @@ const operations = [
   {
     key: 'resetDesktop',
     label: '重置桌面坐标系',
-    title: '重置桌面坐标系',
-    api: 'reset_desktop_coordinate_system'
+    title: '重置桌面坐标系'
   },
   {
     key: 'simulateScrew',
@@ -79,10 +85,19 @@ const operate = ({ key }) => {
   const operation = operations.find(op => op.key === key)
   if (!operation) return
 
+  if (key === 'resetDesktop') {
+    message.info('重置桌面坐标系')
+    const [x, y] = eventBus.movingStreamer.state.position
+    const [cx, cy] = config.imu.center_point
+    config.imu.center_point = [cx - x, cy - y]
+    eventBus.movingStreamer.reader?.cancel()
+    return
+  }
+
   message.loading({ content: '操作中……', key: operation.key, duration: 0 })
   callApi(operation.api)
-    .then(() => message.success({content: '操作成功', key: operation.key}))
-    .catch(() => message.error({content: '操作失败', key: operation.key}))
+    .then(() => message.success({ content: '操作成功', key: operation.key }))
+    .catch(() => message.error({ content: '操作失败', key: operation.key }))
 }
 
 

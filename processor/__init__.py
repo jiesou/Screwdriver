@@ -135,6 +135,3 @@ class ProcessorAPI:
             data_snippet = self.requirement_analyze()
             time.sleep(1/60)
             yield data_snippet
-
-    def handle_reset_desktop_coordinate_system(self):
-        self.imu_api.processor.positions = [[0, 0, 0]]

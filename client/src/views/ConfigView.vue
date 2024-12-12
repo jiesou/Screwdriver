@@ -77,7 +77,7 @@ import eventBus from '@/units/eventBus';
 const reconnect = () => {
   // 需要重连服务端才能更新的配置
   message.info('配置已更新');
-  if (eventBus.movingStreamer.reader) eventBus.movingStreamer.reader.cancel();
+  eventBus.movingStreamer.reader?.cancel();
 };
 
 
