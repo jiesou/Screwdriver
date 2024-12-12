@@ -11,7 +11,7 @@ def open_connection():
     if response is None:
         try:
             response = requests.get(
-                "http://192.168.11.239/status",
+                "http://ESP-FDF62A.lan/status",
                 stream=True,
                 timeout=1
             )

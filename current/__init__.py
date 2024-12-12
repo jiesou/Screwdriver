@@ -15,6 +15,11 @@ class CurrentProcessor:
                 }
                 continue
             frequency = data['frequency']
+            if data['btn_pressed']:
+                yield {
+                    "is_working": True
+                }
+                continue
             if frequency > self.threshold and not self.appliance_on:
                 self.is_working = True
                 self.appliance_on = True
