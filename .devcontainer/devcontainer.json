@@ -12,8 +12,7 @@
 	},
 	"privileged": true,
 	"runArgs": [
-		"--device=/dev/ttyUSB0",
-		"--device=/dev/ttyUSB1",
+		//"--device=/dev/ttyUSB0"
 	],
 	"mounts": [
 		"source=/run/dbus/system_bus_socket,target=/run/dbus/system_bus_socket,type=bind"

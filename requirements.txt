@@ -4,6 +4,4 @@ numpy
 # dbus-python
 # PyGObject
 quart
-quart_cors
-scipy
-requests
+PyQt5
