@@ -4,4 +4,7 @@ numpy
 # dbus-python
 # PyGObject
 quart
+quart_cors
+requests
 PyQt5
+aiohttp
