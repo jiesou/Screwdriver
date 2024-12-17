@@ -1,11 +1,15 @@
-# pyqt/units/event_bus.py
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing import Dict, Any
 from processor import ProcessorAPI
 import threading
 
 processor_api = ProcessorAPI()
-processor_api.set_screws([])
+processor_api.set_screws([
+    { "tag": "1", "position": { "x": 1.05, "y": 1.2, "allowOffset": 0.08 } },
+    { "tag": "2", "position": { "x": 1.05, "y": 0.8, "allowOffset": 0.08 } },
+    { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
+    { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
+])
 processor_api.imu_api.processor.h = 1
 processor_api.imu_api.processor.center_point = (1, 1)
 
@@ -21,13 +25,10 @@ class EventBus(QObject):
             'screw_count': 0
         }
         
-        # Create a thread to handle data stream
         def data_stream_handler():
             for data in processor_api.handle_start_moving():
                 self.state = data
-            
-        self.data_thread = threading.Thread(target=data_stream_handler)
-        self.data_thread.daemon = True  # Make thread daemon so it exits when main program exits
+        self.data_thread = threading.Thread(target=data_stream_handler, daemon=True)
         self.data_thread.start()
 
     @property 

@@ -1,57 +1,73 @@
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QPainter, QColor, QPen
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt
+import pyqtgraph as pg
+import numpy as np
+
+from ..units.event_bus import event_bus
+from ..units.config import config
 
 class ScrewMap(QWidget):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(800, 600)
         self.screws = []
-        self.current_position = None
-        self.scale = 400  # 像素/米
+        self.position = None
         
-    def update_map(self, screws, position):
-        self.screws = screws
-        self.current_position = position
-        self.update()  # 触发重绘
+        # 创建布局
+        layout = QVBoxLayout()
+        self.setLayout(layout)
         
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        # 创建绘图窗口
+        self.plot_widget = pg.PlotWidget()
+        layout.addWidget(self.plot_widget)
         
-        # 绘制背景
-        painter.fillRect(self.rect(), QColor(240, 240, 240))
+        # 设置绘图属性
+        self.plot_widget.setAspectLocked(True)
+        self.plot_widget.setXRange(0, config.map_physics_width)
+        self.plot_widget.setYRange(0, config.map_physics_height)
+        self.plot_widget.showGrid(True, True)
         
-        # 移动原点到中心
-        painter.translate(self.width() / 2, self.height() / 2)
+        # 创建散点图项
+        self.screw_scatter = pg.ScatterPlotItem()
+        self.position_scatter = pg.ScatterPlotItem(size=8, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0))
         
-        # 绘制网格和坐标轴
-        self._draw_grid(painter)
+        self.plot_widget.addItem(self.screw_scatter)
+        self.plot_widget.addItem(self.position_scatter)
         
-        # 绘制螺丝位置
+        # 连接事件总线
+        event_bus.state_updated.connect(self.update_state)
+        
+        self.setMinimumSize(800, 800)
+        
+    def update_state(self, state):
+        self.screws = state.get('screws', [])
+        self.position = state.get('position', None)
+        self.update_plot()
+        
+    def update_plot(self):
+        # 更新螺丝位置
+        spots = []
         for screw in self.screws:
-            x = screw['position']['x'] * self.scale
-            y = -screw['position']['y'] * self.scale  # 注意Y轴方向
+            color = {
+                '已定位': (255, 255, 0),
+                '已完成': (0, 255, 0)
+            }.get(screw['status'], (0, 0, 255))
             
-            # 根据状态设置颜色
-            if screw.get('status') == '已完成':
-                color = QColor(0, 255, 0)  # 绿色
-            elif screw.get('status') == '已定位':
-                color = QColor(255, 165, 0)  # 橙色
-            else:
-                color = QColor(200, 200, 200)  # 灰色
-                
-            painter.setPen(QPen(color, 2))
-            painter.drawEllipse(QPointF(x, y), 5, 5)
-            
-        # 绘制当前位置
-        if self.current_position:
-            x, y = self.current_position
-            painter.setPen(QPen(Qt.red, 3))
-            painter.drawEllipse(QPointF(x * self.scale, -y * self.scale), 8, 8)
-
-    def _draw_grid(self, painter):
-        # 绘制坐标轴
-        painter.setPen(QPen(Qt.black, 1))
-        # painter.drawLine(-self.width()/2, 0, self.width()/2, 0)  # X轴
-        # painter.drawLine(0, -self.height()/2, 0, self.height()/2)  # Y轴
+            spots.append({
+                'pos': (screw['position']['x'], screw['position']['y']),
+                'size': screw['position']['allowOffset'] * 2 * 400,  # 转换到像素大小
+                'pen': None,
+                'brush': pg.mkBrush(*color, 50),  # 50是透明度
+                'symbol': 'o',
+                'data': screw['tag']
+            })
+        
+        self.screw_scatter.setData(spots)
+        
+        # 更新当前位置
+        if self.position:
+            self.position_scatter.setData(
+                [self.position[0]], 
+                [self.position[1]]
+            )
+        else:
+            self.position_scatter.clear()

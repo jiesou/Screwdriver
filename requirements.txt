@@ -8,3 +8,4 @@ quart_cors
 requests
 PyQt5
 aiohttp
+pyqtgraph

@@ -1,28 +1,33 @@
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from PyQt5.QtCore import Qt
 
+from ..units.event_bus import event_bus
+
 class ScrewTable(QTableWidget):
     def __init__(self):
         super().__init__()
+        event_bus.state_updated.connect(self.update_state)
         
         # 设置列
         self.setColumnCount(5)
-        self.setHorizontalHeaderLabels(['序号', '状态', 'X位置(cm)', 'Y位置(cm)', '允许偏差(cm)'])
+        self.setHorizontalHeaderLabels(['标签', '状态', 'X位置(cm)', 'Y位置(cm)', '允许偏差(cm)'])
         
         # 设置表格属性
         self.setMinimumWidth(520)
-        self.setMaximumWidth(520)
+        self.setMaximumWidth(820)
         header = self.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.Fixed)
         
         # 设置列宽
         self.setColumnWidth(0, 60)  # 序号
         self.setColumnWidth(1, 100)  # 状态
-        self.setColumnWidth(2, 120)  # X位置
-        self.setColumnWidth(3, 120)  # Y位置
-        self.setColumnWidth(4, 120)  # 允许偏差
+        self.setColumnWidth(2, 140)  # X位置
+        self.setColumnWidth(3, 140)  # Y位置
+        self.setColumnWidth(4, 150)  # 允许偏差
 
-    def update_screws(self, screws):
+    def update_state(self, state):
+        screws = state.get('screws', [])
+
         self.setRowCount(len(screws))
         
         for row, screw in enumerate(screws):

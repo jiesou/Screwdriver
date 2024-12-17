@@ -10,7 +10,12 @@ class Streamer(QObject):
         self._session = None
 
     async def start_stream(self, config = {
-        "init_screws": [],
+        "init_screws": [
+            { "tag": "1", "position": { "x": 1.05, "y": 1.2, "allowOffset": 0.08 } },
+            { "tag": "2", "position": { "x": 1.05, "y": 0.8, "allowOffset": 0.08 } },
+            { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
+            { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
+        ],
         "imu": {
             "vertical_h": 1.0,
             "center_point": [0, 0]

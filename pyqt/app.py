@@ -1,8 +1,10 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QPushButton, 
                            QVBoxLayout, QHBoxLayout, QLabel)
 from PyQt5.QtCore import Qt
-from .units.event_bus import event_bus
+
 from .views.dash import DashView
+
+from .units.event_bus import event_bus
 
 class App(QMainWindow):
     def __init__(self):
@@ -27,29 +29,26 @@ class App(QMainWindow):
         # 位置信息显示
         self.position_label = QLabel("等待操作")
         self.position_label.setStyleSheet("color: green;")
-        event_bus.state_updated.connect(self.update_state)
+        event_bus.state_updated.connect(
+            lambda data: self.position_label.setText(
+                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'}"
+            ) if data.get('position') else None
+        )
         
         # 添加到工具栏
         toolbar_layout.addWidget(self.operations_btn)
         toolbar_layout.addStretch()
         toolbar_layout.addWidget(self.position_label)
-        
+
         # 添加工具栏到主布局
         main_layout.addWidget(toolbar)
-        
+
+        # 添加仪表盘视图
+        self.dash_view = DashView()
+        main_layout.addWidget(self.dash_view)
         
         print("======PyQt inited======")
-        # 添加仪表盘视图
-        # self.dash_view = DashView()
-        # main_layout.addWidget(self.dash_view)
 
-    def update_state(self, data):
-        if data.get('position'):
-            x, y = data['position']
-            status = "拧螺丝中" if data.get('is_screw_tightening') else "未拧螺丝"
-            self.position_label.setText(
-                f"X: {x*100:.1f} cm Y: {y*100:.1f} cm {status}"
-            )
 
     def show_operations_menu(self):
         # TODO: 实现操作菜单
