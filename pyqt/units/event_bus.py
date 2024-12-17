@@ -1,30 +1,43 @@
+# pyqt/units/event_bus.py
 from PyQt5.QtCore import QObject, pyqtSignal
-from .streamer import Streamer
+from typing import Dict, Any
+from processor import ProcessorAPI
+import threading
+
+processor_api = ProcessorAPI()
+processor_api.set_screws([])
+processor_api.imu_api.processor.h = 1
+processor_api.imu_api.processor.center_point = (1, 1)
 
 class EventBus(QObject):
-    server_connected_changed = pyqtSignal(bool)
-    counter_changed = pyqtSignal(int)
-    
+    state_updated = pyqtSignal(dict)
+
     def __init__(self):
         super().__init__()
-        self._server_connected = False
-        self._counter = -1
-        self.moving_streamer = Streamer()
+        self._state = {
+            'position': [0, 0],
+            'screws': [],
+            'is_screw_tightening': False,
+            'screw_count': 0
+        }
         
-        # 连接信号
-        self.moving_streamer.connection_changed.connect(self.set_server_connected)
+        # Create a thread to handle data stream
+        def data_stream_handler():
+            for data in processor_api.handle_start_moving():
+                self.state = data
+            
+        self.data_thread = threading.Thread(target=data_stream_handler)
+        self.data_thread.daemon = True  # Make thread daemon so it exits when main program exits
+        self.data_thread.start()
 
-    @property
-    def server_connected(self):
-        return self._server_connected
+    @property 
+    def state(self) -> Dict[str, Any]:
+        return self._state
 
-    @server_connected.setter
-    def server_connected(self, value):
-        self._server_connected = value
-        self.server_connected_changed.emit(value)
+    @state.setter
+    def state(self, new_state: Dict[str, Any]):
+        self._state.update(new_state)
+        self.state_updated.emit(new_state)
 
-    def set_server_connected(self, connected):
-        self.server_connected = connected
-
-# 全局事件总线实例
+# 全局单例
 event_bus = EventBus()

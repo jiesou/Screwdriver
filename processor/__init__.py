@@ -68,7 +68,7 @@ class ProcessorAPI:
 
         imu_thread.start()
         current_thread.start()
-        print("inited")
+        print("======Threads started======")
 
     def set_screws(self, screws):
         self.screw_map: ScrewMap = ScrewMap(screws)
@@ -131,6 +131,7 @@ class ProcessorAPI:
         }
 
     def handle_start_moving(self):
+        print("======Stream started======")
         while True:
             data_snippet = self.requirement_analyze()
             time.sleep(1/60)

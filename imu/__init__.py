@@ -6,8 +6,8 @@ class IMUProcessor:
     center_point = [1, 1]
 
     def __init__(self):
-        self.positions = [[0, 0, 0]]
-        self.standing = [0, 0, 0]
+        self.positions = [[0, 0]]
+        self.standing = [0, 0]
         self.screw_tightening = False
 
     def at_initial_position(self, data):

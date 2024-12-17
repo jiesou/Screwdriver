@@ -16,9 +16,9 @@ def open_connection():
                 timeout=1
             )
             response.raise_for_status()
-            print("电流检测原件网络已连接")
+            print("[CurrentSensor] 网络已连接")
         except Exception as e:
-            print(f"电流检测原件网络连接失败: {e}")
+            print(f"[CurrentSensor] 网络连接失败: {e}")
             response = None
 
 # 模块导入时就尝试建立连接
@@ -42,7 +42,7 @@ def read_data():
                         except json.JSONDecodeError:
                             continue
             except Exception as e:
-                print(f"电流检测原件网络连接断开: {e}")
+                print(f"[CurrentSensor] 网络连接断开: {e}")
                 response = None
                 yield None
                 continue
