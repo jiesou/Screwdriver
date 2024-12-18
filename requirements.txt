@@ -9,3 +9,4 @@ requests
 PyQt5
 aiohttp
 pyqtgraph
+pyxdg

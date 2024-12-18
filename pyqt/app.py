@@ -1,16 +1,23 @@
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QPushButton, 
                            QVBoxLayout, QHBoxLayout, QLabel)
 from PyQt5.QtCore import Qt
+import json
 
 from .views.dash import DashView
+from .views.config import ConfigView
 
 from .units.event_bus import event_bus
+from .units.config import config
+
+from imu.communication import z_axes_to_zero
 
 class App(QMainWindow):
     def __init__(self):
         super().__init__()
+        # 添加快捷键支持
+        self.installEventFilter(self)
+
         self.setWindowTitle("螺丝管理系统")
-        self.setGeometry(100, 100, 1200, 800)
         
         # 创建主容器
         main_widget = QWidget()
@@ -22,9 +29,18 @@ class App(QMainWindow):
         toolbar_layout = QHBoxLayout(toolbar)
         toolbar.setStyleSheet("background-color: aliceblue;")
         
-        # 操作菜单按钮
-        self.operations_btn = QPushButton("操作")
-        self.operations_btn.clicked.connect(self.show_operations_menu)
+        # 操作按钮
+        self.reset_z_btn = QPushButton("重置Z轴角")
+        self.reset_z_btn.clicked.connect(lambda: z_axes_to_zero())
+        toolbar_layout.addWidget(self.reset_z_btn)
+
+        self.reset_desktop_btn = QPushButton("重置桌面坐标系")
+        self.reset_desktop_btn.clicked.connect(self.reset_desktop)
+        toolbar_layout.addWidget(self.reset_desktop_btn)
+        
+        self.simulate_screw_btn = QPushButton("模拟拧螺丝")
+        self.simulate_screw_btn.clicked.connect(lambda: self.operate("screw_tightening"))
+        toolbar_layout.addWidget(self.simulate_screw_btn)
         
         # 位置信息显示
         self.position_label = QLabel("等待操作")
@@ -35,8 +51,6 @@ class App(QMainWindow):
             ) if data.get('position') else None
         )
         
-        # 添加到工具栏
-        toolbar_layout.addWidget(self.operations_btn)
         toolbar_layout.addStretch()
         toolbar_layout.addWidget(self.position_label)
 
@@ -47,9 +61,23 @@ class App(QMainWindow):
         self.dash_view = DashView()
         main_layout.addWidget(self.dash_view)
         
+        self.config_view = ConfigView()
+        main_layout.addWidget(self.config_view)
+        
         print("======PyQt inited======")
+        
 
-
-    def show_operations_menu(self):
-        # TODO: 实现操作菜单
-        pass
+    def reset_desktop(self):
+        if 'position' in event_bus.state:
+            x, y = event_bus.state['position']
+            cx, cy = config.get('imu_center_point', [0, 0])
+            # 更新配置
+            config['imu_center_point'] = [cx - x, cy - y]
+    
+    def eventFilter(self, obj, event):
+        if event.type() == event.KeyPress:
+            if event.key() == Qt.Key_Space:
+                print("空格键 - 重置Z轴角")
+                self.operate("reset_z_axes")
+                return True
+        return super().eventFilter(obj, event)

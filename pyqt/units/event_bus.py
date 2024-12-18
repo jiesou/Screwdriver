@@ -3,21 +3,22 @@ from typing import Dict, Any
 from processor import ProcessorAPI
 import threading
 
-processor_api = ProcessorAPI()
-processor_api.set_screws([
-    { "tag": "1", "position": { "x": 1.05, "y": 1.2, "allowOffset": 0.08 } },
-    { "tag": "2", "position": { "x": 1.05, "y": 0.8, "allowOffset": 0.08 } },
-    { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
-    { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
-])
-processor_api.imu_api.processor.h = 1
-processor_api.imu_api.processor.center_point = (1, 1)
-
 class EventBus(QObject):
     state_updated = pyqtSignal(dict)
+    
+    processor_api = ProcessorAPI()
 
     def __init__(self):
         super().__init__()
+        self.processor_api.set_screws([
+            { "tag": "1", "position": { "x": 1.05, "y": 1.2, "allowOffset": 0.08 } },
+            { "tag": "2", "position": { "x": 1.05, "y": 0.8, "allowOffset": 0.08 } },
+            { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
+            { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
+        ])
+        self.processor_api.imu_api.processor.h = 1
+        self.processor_api.imu_api.processor.center_point = (1, 1)
+
         self._state = {
             'position': [0, 0],
             'screws': [],
@@ -26,7 +27,7 @@ class EventBus(QObject):
         }
         
         def data_stream_handler():
-            for data in processor_api.handle_start_moving():
+            for data in self.processor_api.handle_start_moving():
                 self.state = data
         self.data_thread = threading.Thread(target=data_stream_handler, daemon=True)
         self.data_thread.start()

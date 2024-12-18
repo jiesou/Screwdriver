@@ -22,8 +22,8 @@ class ScrewMap(QWidget):
         
         # 设置绘图属性
         self.plot_widget.setAspectLocked(True)
-        self.plot_widget.setXRange(0, config.map_physics_width)
-        self.plot_widget.setYRange(0, config.map_physics_height)
+        self.plot_widget.setXRange(0, config['map_physics_width'])
+        self.plot_widget.setYRange(0, config['map_physics_height'])
         self.plot_widget.showGrid(True, True)
         
         # 创建散点图项
