@@ -4,7 +4,7 @@ import pyqtgraph as pg
 import numpy as np
 
 from ..units.event_bus import event_bus
-from ..units.config import config
+from ..units.stored_config import stored_config
 
 class ScrewMap(QWidget):
     def __init__(self):
@@ -22,8 +22,8 @@ class ScrewMap(QWidget):
         
         # 设置绘图属性
         self.plot_widget.setAspectLocked(True)
-        self.plot_widget.setXRange(-config['map_physics_width']/2, config['map_physics_width']/2)
-        self.plot_widget.setYRange(-config['map_physics_height']/2, config['map_physics_height']/2)
+        self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
+        self.plot_widget.setYRange(-stored_config['map_physics_height']/2, stored_config['map_physics_height']/2)
         self.plot_widget.showGrid(True, True)
         
         # 创建散点图项

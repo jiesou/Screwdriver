@@ -7,7 +7,7 @@ from .views.dash import DashView
 from .views.config import ConfigView
 
 from .units.event_bus import event_bus
-from .units.config import config
+from .units.stored_config import stored_config
 
 from imu.communication import z_axes_to_zero
 
@@ -70,9 +70,10 @@ class App(QMainWindow):
     def reset_desktop(self):
         if 'position' in event_bus.state:
             x, y = event_bus.state['position']
-            cx, cy = config.get('imu_center_point', (0, 0))
+            # print(type(stored_config['imu_center_point_x']))
             # 更新配置
-            config['imu_center_point'] = (cx - x, cy - y)
+            stored_config['imu_center_point_x'] = stored_config['imu_center_point_x'] - x
+            stored_config['imu_center_point_y'] = stored_config['imu_center_point_y'] - y
     
     def eventFilter(self, obj, event):
         if event.type() == event.KeyPress:

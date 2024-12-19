@@ -3,7 +3,7 @@ from typing import Dict, Any
 import threading
 
 from processor import ProcessorAPI
-from ..units.config import config
+from .stored_config import stored_config
 
 class EventBus(QObject):
     state_updated = pyqtSignal(dict)
@@ -18,8 +18,8 @@ class EventBus(QObject):
             { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
             { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
         ])
-        self.processor_api.imu_api.processor.h = config['imu_vertical_h']
-        self.processor_api.imu_api.processor.center_point = config['imu_center_point']
+        self.processor_api.imu_api.processor.h = stored_config['imu_vertical_h']
+        self.processor_api.imu_api.processor.center_point = (stored_config['imu_center_point_x'], stored_config['imu_center_point_y'])
 
         self._state = {
             'position': [0, 0],
