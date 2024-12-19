@@ -70,10 +70,9 @@ class App(QMainWindow):
     def reset_desktop(self):
         if 'position' in event_bus.state:
             x, y = event_bus.state['position']
-            # print(type(stored_config['imu_center_point_x']))
             # 更新配置
-            stored_config['imu_center_point_x'] = stored_config['imu_center_point_x'] - x
-            stored_config['imu_center_point_y'] = stored_config['imu_center_point_y'] - y
+            stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - x)
+            stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
     
     def eventFilter(self, obj, event):
         if event.type() == event.KeyPress:

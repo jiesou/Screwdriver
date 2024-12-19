@@ -14,12 +14,12 @@ class ConfigView(QWidget):
 
         form_layout = QFormLayout()
         # 通用设置函数
-        def setup_spinbox(min_val, max_val, step, initial_val, key, label, extra_callback=None):
+        def setup_spinbox(min_val, max_val, step, key, label, extra_callback=None):
             spinbox = QDoubleSpinBox()
             spinbox.setMinimum(min_val)
             spinbox.setMaximum(max_val)
             spinbox.setSingleStep(step)
-            spinbox.setValue(float(initial_val))
+            spinbox.setValue(stored_config[key])
             
             def update_value(value):
                 stored_config[key] = value
@@ -33,21 +33,18 @@ class ConfigView(QWidget):
 
         setup_spinbox(
             1.0, 100.0, 0.1,
-            stored_config['map_physics_width'],
             'map_physics_width',
             "物理地图宽度(米)"
         )
 
         setup_spinbox(
             1.0, 100.0, 0.1,
-            stored_config['map_physics_height'],
             'map_physics_height',
             "物理地图高度(米)"
         )
 
         setup_spinbox(
             -8.0, 8.0, 0.05,
-            stored_config['imu_center_point_x'],
             'imu_center_point_x',
             "垂直参考中心X偏移(米)",
             lambda _: setattr(event_bus.processor_api.imu_api.processor, 'center_point',
@@ -56,7 +53,6 @@ class ConfigView(QWidget):
 
         setup_spinbox(
             -8.0, 8.0, 0.05,
-            stored_config['imu_center_point_y'],
             'imu_center_point_y',
             "垂直参考中心Y偏移(米)",
             lambda _: setattr(event_bus.processor_api.imu_api.processor, 'center_point',
@@ -65,7 +61,6 @@ class ConfigView(QWidget):
 
         setup_spinbox(
             0.05, 3.0, 0.05,
-            stored_config['imu_vertical_h'],
             'imu_vertical_h',
             "位置单元垂直距离(米)",
             lambda v: setattr(event_bus.processor_api.imu_api.processor, 'h', v)

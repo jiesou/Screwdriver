@@ -3,7 +3,7 @@ from .communication import read_data
 
 class IMUProcessor:
     h = 1
-    center_point = [1, 1]
+    center_point = (0.0, 0.0)
 
     def __init__(self):
         self.positions = [[0, 0]]
@@ -32,6 +32,9 @@ class IMUProcessor:
         y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
 
         # 将旋转后的坐标平移回中心点
+        print(self.center_point)
+        print(type(self.center_point[0]), type(self.center_point[1]))  # 打印类型以确认
+
         x_final = self.center_point[0] + x_rotated
         y_final = self.center_point[1] + y_rotated
 

@@ -6,6 +6,7 @@ import queue
 import time
 from imu import ImuAPI
 from current import CurrentAPI
+import traceback
 
 
 class ScrewMap:
@@ -54,14 +55,16 @@ class ProcessorAPI:
                 for imu_data in self.imu_api.handle_start():
                     self.imu_data = imu_data
             except Exception as e:
-                print("Error in imu data", e)
+                print("[IMU] 线程故障", e)
+                traceback.print_exc()
 
         def get_current_data(self):
             try:
                 for current_data in self.current_api.handle_start():
                     self.current_data = current_data
             except Exception as e:
-                print("Error in current data", e)
+                print("[Current] 线程故障", e)
+                traceback.print_exc()
 
         imu_thread = threading.Thread(target=get_imu_data, args=(self,))
         current_thread = threading.Thread(target=get_current_data, args=(self,))
