@@ -1,7 +1,9 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing import Dict, Any
-from processor import ProcessorAPI
 import threading
+
+from processor import ProcessorAPI
+from ..units.config import config
 
 class EventBus(QObject):
     state_updated = pyqtSignal(dict)
@@ -16,8 +18,8 @@ class EventBus(QObject):
             { "tag": "3", "position": { "x": 1.5, "y": 1.2, "allowOffset": 0.1 } },
             { "tag": "4", "position": { "x": 1.5, "y": 0.8, "allowOffset": 0.1 } }
         ])
-        self.processor_api.imu_api.processor.h = 1
-        self.processor_api.imu_api.processor.center_point = (1, 1)
+        self.processor_api.imu_api.processor.h = config['imu_vertical_h']
+        self.processor_api.imu_api.processor.center_point = config['imu_center_point']
 
         self._state = {
             'position': [0, 0],
