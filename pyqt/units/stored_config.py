@@ -27,7 +27,6 @@ class Config(QObject):
 
     def __setitem__(self, key, value):
         self.settings.setValue(key, value)
-        print(f"Setting {key} to {value}")
         self.settings.sync()
         self.stored_config_updated.emit({key: value})
 

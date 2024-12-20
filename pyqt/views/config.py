@@ -69,8 +69,6 @@ class ConfigView(QWidget):
         layout.addLayout(form_layout)
 
     def update_stored_config(self, updated_config):
-        # 防止循环更新
-        # with QSignalBlocker(self):
         for key, value in updated_config.items():
             if key in self.spinboxes:
                 self.spinboxes[key].setValue(value)

@@ -9,6 +9,9 @@ from ..units.stored_config import stored_config
 class ScrewMap(QWidget):
     def __init__(self):
         super().__init__()
+        event_bus.state_updated.connect(self.update_state)
+        stored_config.stored_config_updated.connect(self.update_config)
+
         self.screws = []
         self.position = None
         
@@ -21,7 +24,7 @@ class ScrewMap(QWidget):
         layout.addWidget(self.plot_widget)
         
         # 设置绘图属性
-        self.plot_widget.setAspectLocked(True)
+        # self.plot_widget.setAspectLocked(True)
         self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
         self.plot_widget.setYRange(-stored_config['map_physics_height']/2, stored_config['map_physics_height']/2)
         self.plot_widget.showGrid(True, True)
@@ -33,8 +36,6 @@ class ScrewMap(QWidget):
         self.plot_widget.addItem(self.screw_scatter)
         self.plot_widget.addItem(self.position_scatter)
         
-        # 连接事件总线
-        event_bus.state_updated.connect(self.update_state)
         
         self.setMinimumSize(800, 800)
         
@@ -42,8 +43,17 @@ class ScrewMap(QWidget):
         self.screws = state.get('screws', [])
         self.position = state.get('position', None)
         self.update_plot()
+    
+    def update_config(self, _):
+        self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
+        self.plot_widget.setYRange(-stored_config['map_physics_height']/2, stored_config['map_physics_height']/2)
         
     def update_plot(self):
+        # 获取当前视图的像素比例
+        view_box = self.plot_widget.getViewBox()
+        screen_size = view_box.viewPixelSize()
+        pixel_scale = (screen_size[0] + screen_size[1]) / 2  # 取平均作为比例因子
+        
         # 更新螺丝位置
         spots = []
         for screw in self.screws:
@@ -52,9 +62,12 @@ class ScrewMap(QWidget):
                 '已完成': (0, 255, 0)
             }.get(screw['status'], (0, 0, 255))
             
+            # 根据当前视图比例调整 size
+            display_size = screw['position']['allowOffset'] * 2 / pixel_scale
+            
             spots.append({
                 'pos': (screw['position']['x'], screw['position']['y']),
-                'size': screw['position']['allowOffset'] * 2 * 400,  # 转换到像素大小
+                'size': display_size,  # 使用调整后的大小
                 'pen': None,
                 'brush': pg.mkBrush(*color, 50),  # 50是透明度
                 'symbol': 'o',
