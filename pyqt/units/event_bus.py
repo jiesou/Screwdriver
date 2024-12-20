@@ -43,5 +43,13 @@ class EventBus(QObject):
         self._state.update(new_state)
         self.state_updated.emit(new_state)
 
+    def import_screws(self, screws):
+        self.processor_api.set_screws(screws)
+        stored_config['init_screws'] = screws
+        self.state = {'screws': screws}
+
+    def export_screws(self):
+        return self.state.get('screws', [])
+
 # 全局单例
 event_bus = EventBus()

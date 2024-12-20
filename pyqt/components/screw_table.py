@@ -19,7 +19,7 @@ class ScrewTable(QTableWidget):
         header.setSectionResizeMode(QHeaderView.Fixed)
         
         # 设置列宽
-        self.setColumnWidth(0, 60)  # 序号
+        self.setColumnWidth(0, 60)  # 标签
         self.setColumnWidth(1, 100)  # 状态
         self.setColumnWidth(2, 140)  # X位置
         self.setColumnWidth(3, 140)  # Y位置
@@ -31,7 +31,7 @@ class ScrewTable(QTableWidget):
         self.setRowCount(len(screws))
         
         for row, screw in enumerate(screws):
-            # 序号
+            # 标签
             self.setItem(row, 0, QTableWidgetItem(str(screw.get('tag', ''))))
             
             # 状态
