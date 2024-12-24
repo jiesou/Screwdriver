@@ -12,10 +12,20 @@
 	},
 	"privileged": true,
 	"runArgs": [
-		//"--device=/dev/ttyUSB0"
+		"--device=/dev/ttyUSB0",
+		"--userns=keep-id",
+        "--cap-add=SYS_PTRACE",
+        "--security-opt",
+        "seccomp=unconfined",
+        "--env=DISPLAY",
+        "--env=QT_X11_NO_MITSHM=1"
 	],
+	"containerEnv": {
+//		"DISPLAY": ":0"
+	},
 	"mounts": [
-		"source=/run/dbus/system_bus_socket,target=/run/dbus/system_bus_socket,type=bind"
+		"source=/run/dbus/system_bus_socket,target=/run/dbus/system_bus_socket,type=bind",
+		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind",
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
