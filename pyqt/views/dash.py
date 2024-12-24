@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, 
                            QPushButton, QFileDialog)
+from .learn import LearnView
 
 from ..components.screw_map import ScrewMap
 from ..components.screw_table import ScrewTable
@@ -26,16 +27,22 @@ class DashView(QWidget):
         export_btn.clicked.connect(self.export_csv)
         btn_layout.addWidget(import_btn)
         btn_layout.addWidget(export_btn)
+        
+        # 在按钮布局中添加学习模式按钮
+        learn_btn = QPushButton("学习模式")
+        learn_btn.clicked.connect(self.open_learn_dialog)
+        btn_layout.addWidget(learn_btn)
+        
         left_layout.addLayout(btn_layout)
         
         # 添加螺丝表格
-        self.screw_table = ScrewTable()
+        self.screw_table = ScrewTable(event_bus.state_updated)
         left_layout.addWidget(self.screw_table)
         
         layout.addWidget(left_panel)
         
         # 添加螺丝地图
-        self.screw_map = ScrewMap()
+        self.screw_map = ScrewMap(event_bus.state_updated)
         layout.addWidget(self.screw_map)
 
     def import_csv(self):
@@ -65,3 +72,7 @@ class DashView(QWidget):
                 export_csv(filepath, screws)
             except Exception as e:
                 print(f"导出失败: {e}")
+
+    def open_learn_dialog(self):
+        dialog = LearnView(self)
+        dialog.exec_()

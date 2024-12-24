@@ -3,13 +3,12 @@ from PyQt5.QtCore import Qt
 import pyqtgraph as pg
 import numpy as np
 
-from ..units.event_bus import event_bus
 from ..units.stored_config import stored_config
 
 class ScrewMap(QWidget):
-    def __init__(self):
+    def __init__(self, state_update_on):
         super().__init__()
-        event_bus.state_updated.connect(self.update_state)
+        state_update_on.connect(self.update_state)
         stored_config.stored_config_updated.connect(self.update_config)
 
         self.screws = []

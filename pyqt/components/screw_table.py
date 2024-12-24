@@ -1,12 +1,10 @@
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
 from PyQt5.QtCore import Qt
 
-from ..units.event_bus import event_bus
-
 class ScrewTable(QTableWidget):
-    def __init__(self):
+    def __init__(self, state_update_on):
         super().__init__()
-        event_bus.state_updated.connect(self.update_state)
+        state_update_on.connect(self.update_state)
         
         # 设置列
         self.setColumnCount(5)
