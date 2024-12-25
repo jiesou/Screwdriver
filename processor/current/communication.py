@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import os
 
 # 模块级别的全局变量
 response = None
@@ -11,7 +12,7 @@ def open_connection():
     if response is None:
         try:
             response = requests.get(
-                "http://ESP-FDF62A.lan/status",
+                os.getenv("CURRENT_SENSOR_HTTP", "http://ESP-1720F6.lan/status"),
                 stream=True,
                 timeout=1
             )

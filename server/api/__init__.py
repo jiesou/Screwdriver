@@ -6,6 +6,7 @@ from server.units import res
 from imu.communication import z_axes_to_zero
 from processor import ProcessorAPI
 import traceback
+import os
 
 api_bp = Blueprint('api', __name__)
 

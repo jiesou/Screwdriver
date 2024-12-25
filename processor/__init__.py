@@ -1,10 +1,12 @@
-import copy
-import numpy as np
+import copy, os
 import threading
 import time
+import traceback
+import numpy as np
+from dotenv import load_dotenv
+load_dotenv()
 from .imu import ImuAPI
 from .current import CurrentAPI
-import traceback
 
 
 class ScrewMap:
@@ -139,5 +141,5 @@ class ProcessorAPI:
         print("======Processor Stream started======")
         while True:
             data_snippet = self.requirement_analyze()
-            time.sleep(1/60)
+            time.sleep(1/int(os.getenv("PROCESSOR_UPDATE_FREQ", 60)))
             yield data_snippet

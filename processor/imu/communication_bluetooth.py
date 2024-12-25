@@ -305,4 +305,4 @@ def read_data():
 def z_axes_to_zero():
     device.lzchar1.write_value(bytearray([0x05]))
 
-init_bluetooth()
+# init_bluetooth()
