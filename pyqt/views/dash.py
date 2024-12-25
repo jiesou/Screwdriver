@@ -75,4 +75,4 @@ class DashView(QWidget):
 
     def open_learn_dialog(self):
         dialog = LearnView(self)
-        dialog.exec_()
+        dialog.exec()

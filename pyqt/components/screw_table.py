@@ -18,7 +18,7 @@ class ScrewTable(QTableWidget):
         header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         
         # 设置列宽
-        self.setColumnWidth(0, 60)  # 标签
+        self.setColumnWidth(0, 10)  # 标签
         self.setColumnWidth(1, 100)  # 状态
         self.setColumnWidth(2, 140)  # X位置
         self.setColumnWidth(3, 140)  # Y位置

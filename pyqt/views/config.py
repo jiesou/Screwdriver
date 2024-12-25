@@ -36,13 +36,7 @@ class ConfigView(QWidget):
             'map_physics_width',
             "物理地图宽度(米)"
         )
-
-        setup_spinbox(
-            1.0, 100.0, 0.1,
-            'map_physics_height',
-            "物理地图高度(米)"
-        )
-
+        
         setup_spinbox(
             -8.0, 8.0, 0.05,
             'imu_center_point_x',

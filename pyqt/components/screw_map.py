@@ -23,10 +23,15 @@ class ScrewMap(QWidget):
         layout.addWidget(self.plot_widget)
         
         # 设置绘图属性
-        # self.plot_widget.setAspectLocked(True)
+        self.plot_widget.setAspectLocked(True)
         self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
-        self.plot_widget.setYRange(-stored_config['map_physics_height']/2, stored_config['map_physics_height']/2)
+        self.plot_widget.setYRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
         self.plot_widget.showGrid(True, True)
+        # 获取 ViewBox 并设置缩放限制
+        self.plot_widget.getViewBox().setLimits(
+            minXRange=0.5,  # 最大放大倍数
+            minYRange=0.5,  # 最大放大倍数
+        )
         
         # 创建散点图项
         self.screw_scatter = pg.ScatterPlotItem()
@@ -36,7 +41,7 @@ class ScrewMap(QWidget):
         self.plot_widget.addItem(self.position_scatter)
         
         
-        self.setMinimumSize(800, 800)
+        # self.setMinimumSize(400, 400)
         
     def update_state(self, state):
         self.screws = state.get('screws', [])
@@ -45,7 +50,7 @@ class ScrewMap(QWidget):
     
     def update_config(self, _):
         self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
-        self.plot_widget.setYRange(-stored_config['map_physics_height']/2, stored_config['map_physics_height']/2)
+        self.plot_widget.setYRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
         
     def update_plot(self):
         # 获取当前视图的像素比例
