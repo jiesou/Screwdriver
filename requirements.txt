@@ -1,7 +1,1 @@
-pyserial
-numpy
-# gatt
-# dbus-python
-# PyGObject
-quart
-PyQt5
+python-dotenv

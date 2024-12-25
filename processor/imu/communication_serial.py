@@ -213,11 +213,10 @@ def Cmd_PackAndTx(ser, pDat, DLen):
         raise
 
 def read_data():
-    print("------------demo start--------------")
     while True:  # 外层循环用于重连
         try:
             with serial.Serial(ser_port, ser_baudrate, timeout=ser_timeout) as ser:
-                print("IMU串口已连接")
+                print("[IMU] 串口已连接")
 
                 # 1.发送配置参数
                 params = [0] * 11  # 数组
@@ -254,14 +253,14 @@ def read_data():
                             if result is not None:
                                 yield result
                     except serial.SerialException as e:
-                        print(f"IMU数据读取错误: {e}")
+                        print(f"[IMU] 数据读取错误: {e}")
                         break
                     
         except serial.SerialException as e:
-            print(f"IMU串口连接断开，尝试重新连接... {e}")
+            # print(f"[IMU] 串口连接断开，尝试重新连接... {e}")
             time.sleep(1)
         except Exception as e:
-            print(f"IMU未知错误: {e}")
+            print(f"[IMU] 未知错误: {e}")
             time.sleep(1)
 
 def z_axes_to_zero():
@@ -271,4 +270,4 @@ def z_axes_to_zero():
             print("\nz-axes to zero--\n")
             Cmd_PackAndTx(ser, buf, 1)
     except serial.SerialException as e:
-        print(f"IMU串口操作失败: {e}")
+        print(f"[IMU] 串口操作失败: {e}")

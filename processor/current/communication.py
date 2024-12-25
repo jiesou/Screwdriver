@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import os
 
 # 模块级别的全局变量
 response = None
@@ -11,14 +12,15 @@ def open_connection():
     if response is None:
         try:
             response = requests.get(
-                "http://ESP-FDF62A.lan/status",
+                os.getenv("CURRENT_SENSOR_HTTP", "http://ESP-1720F6.lan/status"),
                 stream=True,
                 timeout=1
             )
             response.raise_for_status()
-            print("电流检测原件网络已连接")
+            print("[CurrentSensor] 网络已连接")
         except Exception as e:
-            print(f"电流检测原件网络连接失败: {e}")
+            # print(f"[CurrentSensor] 网络连接失败: {e}")
+            time.sleep(0.1)
             response = None
 
 # 模块导入时就尝试建立连接
@@ -42,7 +44,7 @@ def read_data():
                         except json.JSONDecodeError:
                             continue
             except Exception as e:
-                print(f"电流检测原件网络连接断开: {e}")
+                # print(f"[CurrentSensor] 网络连接断开: {e}")
                 response = None
                 yield None
                 continue

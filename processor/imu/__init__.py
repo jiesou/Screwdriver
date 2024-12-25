@@ -3,11 +3,11 @@ from .communication import read_data
 
 class IMUProcessor:
     h = 1
-    center_point = [1, 1]
+    center_point = (0.0, 0.0)
 
     def __init__(self):
-        self.positions = [[0, 0, 0]]
-        self.standing = [0, 0, 0]
+        self.positions = [[0, 0]]
+        self.standing = [0, 0]
         self.screw_tightening = False
 
     def at_initial_position(self, data):
@@ -41,6 +41,7 @@ class IMUProcessor:
         for data in read_data():
             if data is None or 'angle' not in data:
                 yield {
+                    "connected_fine": False,
                     "position": [-1, -1, -1]
                 }
                 continue
@@ -54,6 +55,7 @@ class IMUProcessor:
                 self.positions[-1] = [self.center_point[0], self.center_point[1], 0]
 
             yield {
+                "connected_fine": True,
                 "position": self.positions[-1],
                 **data
             }

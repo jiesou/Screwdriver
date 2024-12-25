@@ -11,12 +11,15 @@ class CurrentProcessor:
         for data in read_data():
             if data is None:
                 yield {
+                    "connected_fine": False,
                     "is_working": False
                 }
                 continue
             frequency = data['frequency']
             if data['btn_pressed']:
+                # 按钮按下时，模拟螺丝刀工作
                 yield {
+                    "connected_fine": True,
                     "is_working": True
                 }
                 continue
@@ -27,6 +30,7 @@ class CurrentProcessor:
                 self.is_working = False
                 self.appliance_on = False
             yield {
+                "connected_fine": True,
                 "is_working": self.is_working is True,
             }
 
