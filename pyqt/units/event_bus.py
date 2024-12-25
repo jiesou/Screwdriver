@@ -1,9 +1,20 @@
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, pyqtSignal, QThread, pyqtSlot
 from typing import Dict, Any
-import threading
 
 from processor import ProcessorAPI
 from .stored_config import stored_config
+
+class DataThread(QThread):
+    # 定义信号
+    data_updated = pyqtSignal(dict)
+    
+    def __init__(self, processor_api):
+        super().__init__()
+        self.processor_api = processor_api
+        
+    def run(self):
+        for data in self.processor_api.handle_start_moving():
+            self.data_updated.emit(data)
 
 class EventBus(QObject):
     state_updated = pyqtSignal(dict)
@@ -28,10 +39,9 @@ class EventBus(QObject):
             'screw_count': 0
         }
         
-        def data_stream_handler():
-            for data in self.processor_api.handle_start_moving():
-                self.state = data
-        self.data_thread = threading.Thread(target=data_stream_handler, daemon=True)
+        # 创建并启动数据线程
+        self.data_thread = DataThread(self.processor_api)
+        self.data_thread.data_updated.connect(self.update_state)
         self.data_thread.start()
 
     @property 
@@ -42,6 +52,10 @@ class EventBus(QObject):
     def state(self, new_state: Dict[str, Any]):
         self._state.update(new_state)
         self.state_updated.emit(new_state)
+
+    @pyqtSlot(dict)
+    def update_state(self, data):
+        self.state = data
 
     def import_screws(self, screws):
         self.processor_api.set_screws(screws)

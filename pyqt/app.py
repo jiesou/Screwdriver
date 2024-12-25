@@ -19,6 +19,7 @@ class App(QMainWindow):
         self.installEventFilter(self)
 
         self.setWindowTitle("螺丝管理系统")
+        self.resize(800, 600)  # 初始大小为800x600
         
         # 创建主容器
         main_widget = QWidget()
@@ -76,8 +77,7 @@ class App(QMainWindow):
             stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
     
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.Type.KeyPress:
-            if event.key() == Qt.Key_Space:
+        if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Space:
                 print("空格键 - 重置Z轴角")
                 self.operate("reset_z_axes")
                 return True
