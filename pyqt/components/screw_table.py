@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
-from PyQt5.QtCore import Qt
+from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+from PyQt6.QtGui import QColor
+from PyQt6.QtCore import Qt
 
 class ScrewTable(QTableWidget):
     def __init__(self, state_update_on):
@@ -14,7 +15,7 @@ class ScrewTable(QTableWidget):
         self.setMinimumWidth(520)
         self.setMaximumWidth(820)
         header = self.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Fixed)
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         
         # 设置列宽
         self.setColumnWidth(0, 60)  # 标签
@@ -34,24 +35,24 @@ class ScrewTable(QTableWidget):
             
             # 状态
             status_item = QTableWidgetItem(screw.get('status', '等待中'))
-            status_item.setTextAlignment(Qt.AlignCenter)
+            status_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             if screw.get('status') == '已完成':
-                status_item.setBackground(Qt.green)
+                status_item.setBackground(QColor(Qt.GlobalColor.green))
             elif screw.get('status') == '已定位':
-                status_item.setBackground(Qt.yellow)
+                status_item.setBackground(QColor(Qt.GlobalColor.yellow))
             self.setItem(row, 1, status_item)
             
             # X位置
             x_pos = QTableWidgetItem(f"{screw['position']['x'] * 100:.1f}")
-            x_pos.setTextAlignment(Qt.AlignCenter)
+            x_pos.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.setItem(row, 2, x_pos)
             
             # Y位置
             y_pos = QTableWidgetItem(f"{screw['position']['y'] * 100:.1f}")
-            y_pos.setTextAlignment(Qt.AlignCenter)
+            y_pos.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.setItem(row, 3, y_pos)
             
             # 允许偏差
             offset = QTableWidgetItem(f"{screw['position']['allowOffset'] * 100:.1f}")
-            offset.setTextAlignment(Qt.AlignCenter)
+            offset.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.setItem(row, 4, offset)

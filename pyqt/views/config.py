@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QDoubleSpinBox, QLabel
-from PyQt5.QtCore import QSignalBlocker
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QFormLayout, QDoubleSpinBox, QLabel
+from PyQt6.QtCore import QSignalBlocker
 
 from ..units.event_bus import event_bus
 from ..units.stored_config import stored_config

@@ -6,7 +6,7 @@ PyGObject
 quart
 quart_cors
 requests
-PyQt5
+PyQt6
 aiohttp
 pyqtgraph
 pyxdg

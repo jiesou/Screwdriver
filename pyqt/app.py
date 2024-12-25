@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QPushButton, 
+from PyQt6.QtWidgets import (QMainWindow, QWidget, QPushButton, 
                            QVBoxLayout, QHBoxLayout, QLabel)
-from PyQt5.QtCore import Qt
+from PyQt6.QtCore import Qt, QEvent
+
 import json
 
 from .views.dash import DashView
@@ -75,7 +76,7 @@ class App(QMainWindow):
             stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
     
     def eventFilter(self, obj, event):
-        if event.type() == event.KeyPress:
+        if event.type() == QEvent.Type.KeyPress:
             if event.key() == Qt.Key_Space:
                 print("空格键 - 重置Z轴角")
                 self.operate("reset_z_axes")

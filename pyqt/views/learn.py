@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
-from PyQt5.QtCore import QTimer
+from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QFileDialog
+from PyQt6.QtCore import QTimer
 from ..components.screw_table import ScrewTable
 from ..components.screw_map import ScrewMap
 from ..components.csv_reader import export_csv

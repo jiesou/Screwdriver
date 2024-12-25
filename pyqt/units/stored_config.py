@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QObject, QSettings, pyqtSignal
+from PyQt6.QtCore import QObject, QSettings, pyqtSignal
 
 DEFAULT_CONFIG = {
     'init_screws': [],

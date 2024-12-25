@@ -1,6 +1,6 @@
 import json
 import asyncio
-from PyQt5.QtCore import QObject
+from PyQt6.QtCore import QObject
 import aiohttp
 from .event_bus import event_bus
 
