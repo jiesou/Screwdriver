@@ -1,11 +1,9 @@
 import copy
 import numpy as np
-import asyncio
 import threading
-import queue
 import time
-from imu import ImuAPI
-from current import CurrentAPI
+from .imu import ImuAPI
+from .current import CurrentAPI
 import traceback
 
 
@@ -71,7 +69,7 @@ class ProcessorAPI:
 
         imu_thread.start()
         current_thread.start()
-        print("======Threads started======")
+        print("======Processor Threads started======")
 
     def set_screws(self, screws):
         self.screw_map: ScrewMap = ScrewMap(screws)
@@ -130,11 +128,15 @@ class ProcessorAPI:
             "located_screw": located_screw,
             "is_screw_tightening": self.current_data["is_working"] if self.current_data is not None else False,
             "screw_count": len(self.current_screw_map.screws) - completed_count,
-            "screws": self.current_screw_map.screws
+            "screws": self.current_screw_map.screws,
+            "sensor_connection": {
+                "imu": self.imu_data["connected_fine"] if self.imu_data is not None else False,
+                "current": self.current_data["connected_fine"] if self.current_data is not None else False
+            }
         }
 
     def handle_start_moving(self):
-        print("======Stream started======")
+        print("======Processor Stream started======")
         while True:
             data_snippet = self.requirement_analyze()
             time.sleep(1/60)

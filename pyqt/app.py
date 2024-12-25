@@ -10,7 +10,7 @@ from .views.config import ConfigView
 from .units.event_bus import event_bus
 from .units.stored_config import stored_config
 
-from imu.communication import z_axes_to_zero
+from processor.imu.communication import z_axes_to_zero
 
 class App(QMainWindow):
     def __init__(self):
@@ -19,7 +19,6 @@ class App(QMainWindow):
         self.installEventFilter(self)
 
         self.setWindowTitle("螺丝管理系统")
-        self.resize(800, 600)  # 初始大小为800x600
         
         # 创建主容器
         main_widget = QWidget()
@@ -72,12 +71,13 @@ class App(QMainWindow):
     def reset_desktop(self):
         if 'position' in event_bus.state:
             x, y = event_bus.state['position']
-            # 更新配置
+            # 直接更新配置
             stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - x)
             stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
     
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.Type.KeyPress and event.key() == Qt.Key.Key_Space:
+        if event.type() == QEvent.Type.KeyPress:
+            if event.key() == Qt.Key_Space:
                 print("空格键 - 重置Z轴角")
                 self.operate("reset_z_axes")
                 return True

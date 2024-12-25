@@ -11,6 +11,7 @@ class CurrentProcessor:
         for data in read_data():
             if data is None:
                 yield {
+                    "connected_fine": False,
                     "is_working": False
                 }
                 continue
@@ -27,6 +28,7 @@ class CurrentProcessor:
                 self.is_working = False
                 self.appliance_on = False
             yield {
+                "connected_fine": True,
                 "is_working": self.is_working is True,
             }
 

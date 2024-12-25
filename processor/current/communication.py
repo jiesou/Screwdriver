@@ -43,7 +43,7 @@ def read_data():
                         except json.JSONDecodeError:
                             continue
             except Exception as e:
-                print(f"[CurrentSensor] 网络连接断开: {e}")
+                # print(f"[CurrentSensor] 网络连接断开: {e}")
                 response = None
                 yield None
                 continue
