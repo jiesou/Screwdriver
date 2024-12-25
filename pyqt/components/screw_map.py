@@ -23,6 +23,10 @@ class ScrewMap(QWidget):
         layout.addWidget(self.plot_widget)
         
         # 设置绘图属性
+        self.plot_widget.setBackground(None)  # 设置背景透明
+        self.plot_widget.showGrid(True, True)
+        
+        # 其他属性设置
         self.plot_widget.setAspectLocked(True)
         self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
         self.plot_widget.setYRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)

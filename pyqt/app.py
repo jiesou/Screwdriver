@@ -48,7 +48,7 @@ class App(QMainWindow):
         self.position_label.setStyleSheet("color: green;")
         event_bus.state_updated.connect(
             lambda data: self.position_label.setText(
-                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'}"
+                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'} 连接状态：[{data['sensor_connection']}]"
             ) if data.get('position') else None
         )
         
