@@ -10,7 +10,7 @@ DEFAULT_CONFIG = {
 }
 
 class Config(QObject):
-    stored_config_updated = pyqtSignal(dict)
+    updated = pyqtSignal(dict)
     
     def __init__(self):
         super().__init__()
@@ -28,7 +28,7 @@ class Config(QObject):
     def __setitem__(self, key, value):
         self.settings.setValue(key, value)
         self.settings.sync()
-        self.stored_config_updated.emit({key: value})
+        self.updated.emit({key: value})
 
 
 # 创建全局配置实例

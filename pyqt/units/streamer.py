@@ -2,7 +2,7 @@ import json
 import asyncio
 from PyQt6.QtCore import QObject
 import aiohttp
-from .event_bus import event_bus
+from .state_bus import state_bus
 
 class Streamer(QObject):
     def __init__(self):
@@ -31,8 +31,8 @@ class Streamer(QObject):
                 'h': config.imu.vertical_h,
                 'center_point': config.imu.center_point
             }) as response:
-                event_bus.loading = False
-                event_bus.connection = True
+                state_bus.loading = False
+                state_bus.connection = True
                 
                 while True:
                     data = await response.content.readline()
@@ -40,17 +40,17 @@ class Streamer(QObject):
                         break
                         
                     json_data = json.loads(data)
-                    event_bus.state = json_data
+                    state_bus.state = json_data
                     
         except Exception as e:
             print(f"Stream error: {e}")
-            event_bus.connection = False
+            state_bus.connection = False
             raise
 
 
     def start(self):
-        event_bus.doing = True
-        event_bus.loading = True
+        state_bus.doing = True
+        state_bus.loading = True
         asyncio.ensure_future(self.start_stream())
         return "正在连接..."
 
@@ -58,8 +58,8 @@ class Streamer(QObject):
         if self._session:
             asyncio.ensure_future(self._session.close())
             self._session = None
-        event_bus.doing = False
-        event_bus.connection = False
+        state_bus.doing = False
+        state_bus.connection = False
         return "已停止"
     
 streamer = Streamer()

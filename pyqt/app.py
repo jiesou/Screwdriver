@@ -7,7 +7,7 @@ import json
 from .views.dash import DashView
 from .views.config import ConfigView
 
-from .units.event_bus import event_bus
+from .units.state_bus import state_bus
 from .units.stored_config import stored_config
 
 from processor.imu.communication import z_axes_to_zero
@@ -39,14 +39,10 @@ class App(QMainWindow):
         self.reset_desktop_btn.clicked.connect(self.reset_desktop)
         toolbar_layout.addWidget(self.reset_desktop_btn)
         
-        self.simulate_screw_btn = QPushButton("模拟拧螺丝")
-        self.simulate_screw_btn.clicked.connect(lambda: self.operate("screw_tightening"))
-        toolbar_layout.addWidget(self.simulate_screw_btn)
-        
         # 位置信息显示
         self.position_label = QLabel("等待操作")
         self.position_label.setStyleSheet("color: green;")
-        event_bus.state_updated.connect(
+        state_bus.updated.connect(
             lambda data: self.position_label.setText(
                 f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'} 连接状态：[{data['sensor_connection']}]"
             ) if data.get('position') else None
@@ -69,8 +65,8 @@ class App(QMainWindow):
         
 
     def reset_desktop(self):
-        if 'position' in event_bus.state:
-            x, y = event_bus.state['position']
+        if 'position' in state_bus.state:
+            x, y = state_bus.state['position']
             # 直接更新配置
             stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - x)
             stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)

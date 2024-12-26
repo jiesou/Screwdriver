@@ -2,8 +2,8 @@ from PyQt6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QFil
 from PyQt6.QtCore import QTimer
 from ..components.screw_table import ScrewTable
 from ..components.screw_map import ScrewMap
-from ..components.csv_reader import export_csv
-from ..units.event_bus import event_bus
+from ..components.csv_reader import write
+from ..units.state_bus import state_bus
 from processor import ProcessorAPI
 
 class LearnView(QDialog):
@@ -26,8 +26,8 @@ class LearnView(QDialog):
         layout.addLayout(btn_layout)
 
         # 表格 & 地图
-        self.screw_table = ScrewTable(event_bus.state_updated)
-        self.screw_map = ScrewMap(event_bus.state_updated)
+        self.screw_table = ScrewTable(state_bus.updated)
+        self.screw_map = ScrewMap(state_bus.updated)
         layout.addWidget(self.screw_table)
         layout.addWidget(self.screw_map)
 
@@ -42,7 +42,7 @@ class LearnView(QDialog):
 
     def start_learning(self):
         self.screws.clear()
-        self.timer.start(50)  # 20Hz 采样
+        # self.timer.start(50)  # 20Hz 采样
 
     def stop_learning(self):
         self.timer.stop()
@@ -52,7 +52,7 @@ class LearnView(QDialog):
             self, "导出学习结果", "", "CSV Files (*.csv)"
         )
         if filepath:
-            export_csv(filepath, self.screws)
+            write(filepath, self.screws)
 
     def collect_data(self):
         # 获取实时数据
@@ -74,4 +74,4 @@ class LearnView(QDialog):
         self.prev_is_tightening = is_tightening
 
         # 更新界面
-        event_bus.import_screws(self.screws)
+        state_bus.import_screws(self.screws)

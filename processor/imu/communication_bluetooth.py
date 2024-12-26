@@ -25,24 +25,24 @@ class AnyDevice(gatt.Device):
 
     def connect_succeeded(self):
         super().connect_succeeded()
-        print("[%s] 惯性测量单元蓝牙已连接" % (self.mac_address))
+        print("[IMU] [%s]  蓝牙已连接" % (self.mac_address))
 
     def connect_failed(self, error):
         super().connect_failed(error)
-        print("[%s] 惯性测量单元蓝牙连接失败：%s" % (self.mac_address, str(error)))
+        print("[IMU] [%s]  蓝牙连接失败：%s" % (self.mac_address, str(error)))
 
     def disconnect_succeeded(self):
         super().disconnect_succeeded()
-        print("[%s] 惯性测量单元蓝牙连接已断开" % (self.mac_address))
+        print("[IMU] [%s]  蓝牙连接已断开" % (self.mac_address))
 
     def services_resolved(self):
         super().services_resolved()
 
-        print("[%s] Resolved services" % (self.mac_address))
+        print("[IMU] [%s]  Resolved services" % (self.mac_address))
         for service in self.services:
-            print("[%s]\tService [%s]" % (self.mac_address, service.uuid))
+            print("[IMU] [%s] \tService [%s] " % (self.mac_address, service.uuid))
             for characteristic in service.characteristics:
-                print("[%s]\t\tCharacteristic [%s]" %
+                print("[IMU] [%s] \t\tCharacteristic [%s] " %
                       (self.mac_address, characteristic.uuid))
 
         # 保持连接
@@ -51,7 +51,7 @@ class AnyDevice(gatt.Device):
             if c.uuid == '0000ae01-0000-1000-8000-00805f9b34fb'.lower())
         self.lzchar1.write_value(')'.encode())  # 发送十六进制的0x29，让设备保持连接
 
-        # 尝试采用惯性测量单元蓝牙高速通信特性 0x46
+        # 尝试采用[IMU] 蓝牙高速通信特性 0x46
         self.lzchar1.write_value(bytes([0x46]))
 
         # GPIO 上拉
@@ -88,19 +88,19 @@ class AnyDevice(gatt.Device):
 
     def characteristic_write_value_succeeded(self, characteristic):
         super().characteristic_write_value_succeeded(characteristic)
-        print("[%s] wr ok" % (self.mac_address))
+        print("[IMU] [%s]  wr ok" % (self.mac_address))
 
     def characteristic_write_value_failed(self, characteristic, error):
         super().characteristic_write_value_failed(characteristic, error)
-        print("[%s] wr err %s" % (self.mac_address, error))
+        print("[IMU] [%s]  wr err %s" % (self.mac_address, error))
 
     def characteristic_enable_notifications_succeeded(self, characteristic):
         super().characteristic_enable_notifications_succeeded(characteristic)
-        print("[%s] notify ok" % (self.mac_address))
+        print("[IMU] [%s]  notify ok" % (self.mac_address))
 
     def characteristic_enable_notifications_failed(self, characteristic, error):
         super().characteristic_enable_notifications_failed(characteristic, error)
-        print("[%s] notify err. %s" % (self.mac_address, error))
+        print("[IMU] [%s]  notify err. %s" % (self.mac_address, error))
 
     def characteristic_value_updated(self, characteristic, value):
         # self.parse_imu(value)
@@ -250,7 +250,7 @@ def init_bluetooth():
     host = None
     port = 6666
     sock = None
-    print("host ip: ", host)
+    print("[IMU] host ip: ", host)
     if host is not None:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -259,7 +259,7 @@ def init_bluetooth():
             print("Could not make a connection to the server")
             input("Press enter to quit")
             sys.exit(0)
-    print("Connecting bluetooth ...")
+    print("[IMU] Connecting bluetooth ...")
 
     manager = gatt.DeviceManager(adapter_name='hci0')
     device = AnyDevice(manager=manager, mac_address=mac_address)
@@ -287,16 +287,16 @@ def read_data():
             yield results.pop(0)
         try:
             if not device.is_connected():
-                raise dbus.exceptions.DBusException("惯性测量单元蓝牙断开")
+                raise dbus.exceptions.DBusException("[IMU] 蓝牙断开")
         except dbus.exceptions.DBusException as e:
-            print(f"惯性测量单元蓝牙断开，尝试重新连接... {e}")
+            print(f"[IMU] 蓝牙断开，尝试重新连接... {e}")
             while True:
                 try:
                     init_bluetooth()
-                    print("惯性测量单元蓝牙重新连接……")
+                    print("[IMU] 蓝牙重新连接……")
                     break
                 except Exception as e:
-                    print(f"惯性测量单元蓝牙重新连接失败: {e}")
+                    print(f"[IMU] 蓝牙重新连接失败: {e}")
                     time.sleep(4)
             time.sleep(1)
             device.callback = data_callback

@@ -11,17 +11,17 @@
             "module": "server"
         },
         {
-            "name": "imu",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "imu"
-        },
-        {
             "command": "yarn dev",
             "cwd": "${workspaceFolder}/client",
             "name": "client",
             "request": "launch",
             "type": "node-terminal"
+        },
+        {
+            "name": "pyqt",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pyqt"
         },
     ],
     "compounds": [

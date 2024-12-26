@@ -12,17 +12,21 @@ class ScrewTable(QTableWidget):
         self.setHorizontalHeaderLabels(['标签', '状态', 'X位置(cm)', 'Y位置(cm)', '允许偏差(cm)'])
         
         # 设置表格属性
-        self.setMinimumWidth(520)
-        self.setMaximumWidth(820)
+        # 设置表格属性
+        self.setMinimumWidth(400)  # 设置最小宽度
+        # 移除 setMaximumWidth 的限制
+        
         header = self.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        # 改为可调整模式
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        
         
         # 设置列宽
-        self.setColumnWidth(0, 10)  # 标签
-        self.setColumnWidth(1, 100)  # 状态
-        self.setColumnWidth(2, 140)  # X位置
-        self.setColumnWidth(3, 140)  # Y位置
-        self.setColumnWidth(4, 150)  # 允许偏差
+        self.setColumnWidth(0, 50)  # 标签
+        self.setColumnWidth(1, 70)  # 状态
+        self.setColumnWidth(2, 70)  # X位置
+        self.setColumnWidth(3, 70)  # Y位置
+        self.setColumnWidth(4, 80)  # 允许偏差
 
     def update_state(self, state):
         screws = state.get('screws', [])

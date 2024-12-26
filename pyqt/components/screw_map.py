@@ -9,7 +9,7 @@ class ScrewMap(QWidget):
     def __init__(self, state_update_on):
         super().__init__()
         state_update_on.connect(self.update_state)
-        stored_config.stored_config_updated.connect(self.update_config)
+        stored_config.updated.connect(self.update_config)
 
         self.screws = []
         self.position = None
@@ -52,9 +52,10 @@ class ScrewMap(QWidget):
         self.position = state.get('position', None)
         self.update_plot()
     
-    def update_config(self, _):
-        self.plot_widget.setXRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
-        self.plot_widget.setYRange(-stored_config['map_physics_width']/2, stored_config['map_physics_width']/2)
+    def update_config(self, updated_config):
+        if 'map_physics_width' in updated_config:
+            self.plot_widget.setXRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
+            self.plot_widget.setYRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
         
     def update_plot(self):
         # 获取当前视图的像素比例
