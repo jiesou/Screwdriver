@@ -19,7 +19,7 @@ def open_connection():
             response.raise_for_status()
             print("[CurrentSensor] 网络已连接")
         except Exception as e:
-            # print(f"[CurrentSensor] 网络连接失败: {e}")
+            print(f"[CurrentSensor] 网络连接失败: {e}")
             time.sleep(0.1)
             response = None
 
@@ -44,7 +44,7 @@ def read_data():
                         except json.JSONDecodeError:
                             continue
             except Exception as e:
-                # print(f"[CurrentSensor] 网络连接断开: {e}")
+                print(f"[CurrentSensor] 网络连接断开: {e}")
                 response = None
                 yield None
                 continue

@@ -111,9 +111,12 @@ class ProcessorAPI:
             if screw["status"] == "已完成":
                 completed_count += 1
                 if completed_count >= len(self.current_screw_map.screws):
-                    self.current_screw_map = copy.deepcopy(self.screw_map)
                     # 防止“拧紧螺丝状态”继承到下一个产品，而直接将同位螺丝拧下
                     self.current_api.processor.is_working = False
+                    self.current_api.processor.appliance_on = True
+                    self.current_data["is_working"] = False
+                    self.current_screw_map = copy.deepcopy(self.screw_map)
+                    print(self.current_screw_map.screws)
                     break
                 continue
             screw["status"] = "等待中"
@@ -122,6 +125,9 @@ class ProcessorAPI:
             located_screw["status"] = "已定位"
             if self.current_data["is_working"]:
                 located_screw["status"] = "已完成"
+                # “拧紧螺丝状态”继承到下一个孔位
+                self.current_api.processor.is_working = False
+                self.current_api.processor.appliance_on = True
                 self.current_data["is_working"] = False
 
         # 返回分析结果

@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from .communication import read_data
 
@@ -27,9 +28,14 @@ class IMUProcessor:
         x = self.h * np.tan(x_rad)
         y = self.h * np.tan(y_rad)
 
-        # 应用 z 轴旋转，对 x 和 y 进行旋转变换
-        x_rotated = x * np.cos(z_rad) - y * np.sin(z_rad)
-        y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
+        # 只在启用 Z 轴矫正时进行旋转变换
+        if os.environ.get('ENABLE_Z_AXIS_CORRECTION') == 'True':
+            # 应用 z 轴旋转，对 x 和 y 进行旋转变换
+            x_rotated = x * np.cos(z_rad) - y * np.sin(z_rad)
+            y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
+        else:
+            x_rotated = x
+            y_rotated = y
 
         # 将旋转后的坐标平移回中心点
         x_final = self.center_point[0] + x_rotated

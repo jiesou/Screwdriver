@@ -257,7 +257,7 @@ def read_data():
                         break
                     
         except serial.SerialException as e:
-            # print(f"[IMU] 串口连接断开，尝试重新连接... {e}")
+            print(f"[IMU] 串口连接断开，尝试重新连接... {e}")
             time.sleep(1)
         except Exception as e:
             print(f"[IMU] 未知错误: {e}")

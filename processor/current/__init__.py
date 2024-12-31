@@ -16,13 +16,13 @@ class CurrentProcessor:
                 }
                 continue
             frequency = data['frequency']
-            if data['btn_pressed']:
-                # 按钮按下时，模拟螺丝刀工作
-                yield {
-                    "connected_fine": True,
-                    "is_working": True
-                }
-                continue
+            # if data['btn_pressed']:
+            #     # 按钮按下时，模拟螺丝刀工作
+            #     yield {
+            #         "connected_fine": True,
+            #         "is_working": True
+            #     }
+            #     continue
             if frequency > self.threshold and not self.appliance_on:
                 self.is_working = True
                 self.appliance_on = True
