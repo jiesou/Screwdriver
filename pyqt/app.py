@@ -6,6 +6,7 @@ import json
 
 from .views.dash import DashView
 from .views.config import ConfigView
+from .components.screw_counter import ScrewCounter
 
 from .units.state_bus import state_bus
 from .units.stored_config import stored_config
@@ -28,6 +29,7 @@ class App(QMainWindow):
         toolbar_layout = QHBoxLayout(toolbar)
         toolbar.setStyleSheet("background-color: aliceblue;")
 
+        toolbar_layout.addWidget(ScrewCounter())
         
         # 操作按钮
         self.reset_z_btn = QPushButton("重置Z轴角")

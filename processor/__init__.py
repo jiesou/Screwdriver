@@ -15,7 +15,8 @@ class ScrewMap:
 
     def filter_screws_in_range(self, position):
         filtered_map = []
-        for screw in self.screws:
+        unfinished_screws = [screw for screw in self.screws if screw["status"] != "已完成"]
+        for screw in unfinished_screws:
             space_distance = np.sqrt(
                 (position[0] - screw['position']['x'])**2 +
                 (position[1] - screw['position']['y'])**2
@@ -44,6 +45,8 @@ class ScrewMap:
 
 
 class ProcessorAPI:
+    finished_products = 0
+
     def __init__(self):
         self.imu_api = ImuAPI()
         self.current_api = CurrentAPI()
@@ -116,7 +119,7 @@ class ProcessorAPI:
                     self.current_api.processor.appliance_on = True
                     self.current_data["is_working"] = False
                     self.current_screw_map = copy.deepcopy(self.screw_map)
-                    print(self.current_screw_map.screws)
+                    self.finished_products += 1
                     break
                 continue
             screw["status"] = "等待中"
@@ -137,6 +140,7 @@ class ProcessorAPI:
             "is_screw_tightening": self.current_data["is_working"] if self.current_data is not None else False,
             "screw_count": len(self.current_screw_map.screws) - completed_count,
             "screws": self.current_screw_map.screws,
+            "products_finished": self.finished_products,
             "sensor_connection": {
                 "imu": self.imu_data["connected_fine"] if self.imu_data is not None else False,
                 "current": self.current_data["connected_fine"] if self.current_data is not None else False
