@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QPushButton,
                            QVBoxLayout, QHBoxLayout, QLabel)
 from PyQt6.QtCore import Qt, QEvent
 
-import json
+import json, os
 
 from .views.dash import DashView
 from .views.config import ConfigView
@@ -11,7 +11,7 @@ from .components.screw_counter import ScrewCounter
 from .units.state_bus import state_bus
 from .units.stored_config import stored_config
 
-from processor.imu_communication import z_axes_to_zero
+from processor.imu.communication.serial import SerialCommunicator
 
 class App(QMainWindow):
     def __init__(self):
@@ -33,7 +33,7 @@ class App(QMainWindow):
         
         # 操作按钮
         self.reset_z_btn = QPushButton("重置Z轴角")
-        self.reset_z_btn.clicked.connect(lambda: z_axes_to_zero())
+        self.reset_z_btn.clicked.connect(lambda: SerialCommunicator(os.getenv("IMU_TOP_COM_PORT", "/dev/ttyUSB0")).z_axes_to_zero())
         toolbar_layout.addWidget(self.reset_z_btn)
 
         self.reset_desktop_btn = QPushButton("重置桌面坐标系")

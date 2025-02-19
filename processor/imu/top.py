@@ -1,15 +1,16 @@
 import os
 import numpy as np
-from ..imu_communication import read_data
+from .communication import Communicator
 
-class IMUTopProcessor:
+class ImuProcessor:
     h = 1
     center_point = (0.0, 0.0)
+    
+    positions = [[0, 0]]
+    standing = [0, 0]
+    screw_tightening = False
 
-    def __init__(self):
-        self.positions = [[0, 0]]
-        self.standing = [0, 0]
-        self.screw_tightening = False
+    communicator = Communicator(os.getenv("IMU_TOP_COM_PORT", "/dev/ttyUSB0"))
 
     def at_initial_position(self, data):
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0
@@ -44,16 +45,17 @@ class IMUTopProcessor:
         return [x_final, y_final]
 
     def parse_data(self):
-        for data in read_data(os.getenv("IMU_TOP_COM_PORT", "/dev/ttyUSB0")):
+        for data in self.communicator.read_data():
             if data is None or 'angle' not in data:
                 yield {
                     "connected_fine": False,
-                    "position": [-1, -1, -1]
+                    "position": [0, 0, 0]
                 }
                 continue
-
+            
             position = self.compute_position(data['angle'])
             self.positions.append(position)
+            # positions 是 processor 内的参数，不会通过 API yield 给 data，但也可能被其他部分使用。data 内只有最新的位置
             if len(self.positions) > 20:
                 self.positions.pop(0)
             
@@ -67,9 +69,9 @@ class IMUTopProcessor:
             }
 
 
-class ImuTopAPI:
+class API:
     def __init__(self):
-        self.processor = IMUTopProcessor()
+        self.processor = ImuProcessor()
 
     def handle_start(self):
         yield from self.processor.parse_data()

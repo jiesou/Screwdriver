@@ -245,64 +245,64 @@ class AnyDevice(gatt.Device):
 
 device = None
 manager = None
-def init_bluetooth(args=None):
-    global device, manager
-    host = None
-    port = 6666
-    sock = None
-    print("[IMU] host ip: ", host)
-    if host is not None:
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((host, port))
-        except:
-            print("Could not make a connection to the server")
-            input("Press enter to quit")
-            sys.exit(0)
-    print("[IMU] Connecting bluetooth ...")
 
-    manager = gatt.DeviceManager(adapter_name='hci0')
-    device = AnyDevice(manager=manager, mac_address=mac_address)
-    device.sock_pc = sock
-    if host is None:
-        device.parse_imu_flage = True
-    
-    def runner():
-        device.connect()
-        manager.run()
-    threading.Thread(target=runner, daemon=True).start()
+class BluetoothCommunicator:
+    def __init__(self):
+        global device, manager
+        host = None
+        port = 6666
+        sock = None
+        print("[IMU] host ip: ", host)
+        if host is not None:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect((host, port))
+            except:
+                print("Could not make a connection to the server")
+                input("Press enter to quit")
+                sys.exit(0)
+        print("[IMU] Connecting bluetooth ...")
 
-def read_data():
-    results = []
+        manager = gatt.DeviceManager(adapter_name='hci0')
+        device = AnyDevice(manager=manager, mac_address=mac_address)
+        device.sock_pc = sock
+        if host is None:
+            device.parse_imu_flage = True
+        
+        def runner():
+            device.connect()
+            manager.run()
+        threading.Thread(target=runner, daemon=True).start()
 
-    def data_callback(result):
-        # yield 数据到外部
-        nonlocal results
-        results.append(result)
+    def read_data(self):
+        results = []
 
-    device.callback = data_callback
+        def data_callback(result):
+            # yield 数据到外部
+            nonlocal results
+            results.append(result)
 
-    while True:
-        if results:
-            yield results.pop(0)
-        try:
-            if not device.is_connected():
-                raise dbus.exceptions.DBusException("[IMU] 蓝牙断开")
-        except dbus.exceptions.DBusException as e:
-            print(f"[IMU] 蓝牙断开，尝试重新连接... {e}")
-            while True:
-                try:
-                    init_bluetooth()
-                    print("[IMU] 蓝牙重新连接……")
-                    break
-                except Exception as e:
-                    print(f"[IMU] 蓝牙重新连接失败: {e}")
-                    time.sleep(4)
-            time.sleep(1)
-            device.callback = data_callback
-            yield None
+        device.callback = data_callback
 
-def z_axes_to_zero():
-    device.lzchar1.write_value(bytearray([0x05]))
+        while True:
+            if results:
+                yield results.pop(0)
+            try:
+                if not device.is_connected():
+                    raise dbus.exceptions.DBusException("[IMU] 蓝牙断开")
+            except dbus.exceptions.DBusException as e:
+                print(f"[IMU] 蓝牙断开，尝试重新连接... {e}")
+                while True:
+                    try:
+                        init_bluetooth()
+                        print("[IMU] 蓝牙重新连接……")
+                        break
+                    except Exception as e:
+                        print(f"[IMU] 蓝牙重新连接失败: {e}")
+                        time.sleep(4)
+                time.sleep(1)
+                device.callback = data_callback
+                yield None
 
-# init_bluetooth()
+    def z_axes_to_zero(self):
+        device.lzchar1.write_value(bytearray([0x05]))

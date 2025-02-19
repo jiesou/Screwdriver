@@ -5,8 +5,8 @@ import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
-from .imu_top import ImuTopAPI
-from .imu_end import ImuEndAPI
+from .imu.top import API as ImuTopAPI
+from .imu.end import API as ImuEndAPI
 from .current import CurrentAPI
 
 
@@ -52,30 +52,36 @@ class ProcessorAPI:
         self.imu_top_api = ImuTopAPI()
         self.imu_end_api = ImuEndAPI()
         self.current_api = CurrentAPI()
-        self.imu_top_data = None
-        self.imu_end_data = None
+        self.imu_top_data = {
+            "connected_fine": False,
+            "position": [0, 0, 0]
+        }
+        self.imu_end_data = {
+            "connected_fine": False,
+            "position": [0, 0, 0]
+        }
         self.current_data = None
 
         def get_imu_top_data(self):
             try:
-                for imu_data in self.imu_top_api.handle_start():
-                    self.imu_top_data = imu_data
+                for data in self.imu_top_api.handle_start():
+                    self.imu_top_data = data
             except Exception as e:
                 print("[IMU TOP] 线程故障", e)
                 traceback.print_exc()
 
         def get_imu_end_data(self):
             try:
-                for imu_data in self.imu_end_api.handle_start():
-                    self.imu_end_data = imu_data
+                for data in self.imu_end_api.handle_start():
+                    self.imu_end_data = data
             except Exception as e:
                 print("[IMU END] 线程故障", e)
                 traceback.print_exc()
 
         def get_current_data(self):
             try:
-                for current_data in self.current_api.handle_start():
-                    self.current_data = current_data
+                for data in self.current_api.handle_start():
+                    self.current_data = data
             except Exception as e:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
@@ -96,6 +102,21 @@ class ProcessorAPI:
     def set_screws(self, screws):
         self.screw_map: ScrewMap = ScrewMap(screws)
         self.current_screw_map = copy.deepcopy(self.screw_map)
+
+    def compute_effector_position(self, l1: float = 1, l2: float = 0.1) -> dict:
+        """
+        使用前向运动学计算终端位置。
+        l1: 起始点到中间点的弹簧有效长度（可能需要实时测量或预先标定）。
+        l2: 中间点到终端连杆的长度。
+        假设 IMU 数据中提供 "pitch" 和 "roll"（单位°），
+        同时 processor.h 表示起始点与终端之间固定的垂直位置补偿。
+        """
+        # 获取两个 IMU 的位置数据
+        imu_top_position = self.imu_top_data["position"]
+        imu_end_position = self.imu_end_data["position"]
+
+        return [imu_top_position[0] + imu_end_position[0], imu_top_position[1] + imu_end_position[1]]
+
 
     def requirement_analyze(self):
         # 在 current_data["is_working"] 为 True 时，屏蔽掉 position 的更新（振动导致 imu 检测不准）
@@ -118,8 +139,9 @@ class ProcessorAPI:
         #             self.imu_api.imu_processor.positions[1]
         #         ]
         #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
-                
-        position = self.imu_top_api.processor.positions[-1]
+        
+        position = self.compute_effector_position()
+
         located_screw = self.current_screw_map.locate_closest_screw(
             position,
             self.current_screw_map.filter_screws_in_range(position)
