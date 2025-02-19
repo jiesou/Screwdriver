@@ -55,6 +55,15 @@ class ConfigView(QWidget):
         self.http_path_input.textChanged.connect(update_http_path)
         comm_layout.addRow(QLabel('电流传感器HTTP通讯路径'), self.http_path_input)
 
+        self.imu_com_port_input = QLineEdit()
+        self.imu_com_port_input.setText(stored_config['imu_com_port'])
+
+        def update_com_port(value):
+            stored_config['imu_com_port'] = value
+        
+        self.imu_com_port_input.textChanged.connect(update_com_port)
+        comm_layout.addRow(QLabel('IMU通迅串口'), self.imu_com_port_input)
+
         self.z_axis_correction_checkbox = QCheckBox("启用Z轴矫正")
         self.z_axis_correction_checkbox.setChecked(stored_config['enable_z_axis_correction'])
 

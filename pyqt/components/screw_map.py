@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QHBoxLayout
 from PyQt6.QtCore import Qt
 import pyqtgraph as pg
 import numpy as np
@@ -13,14 +13,26 @@ class ScrewMap(QWidget):
 
         self.screws = []
         self.position = None
+        self.axes_flipped = False
         
         # 创建布局
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+        
+        # 创建按钮布局
+        button_layout = QHBoxLayout()
+        self.flip_axes_button = QPushButton("切换 XY 轴")
+        self.flip_axes_button.clicked.connect(self.toggle_axes)
+        self.rotate_button = QPushButton("旋转90度")
+        self.rotate_button.clicked.connect(self.rotate_90_degrees)
+        button_layout.addWidget(self.flip_axes_button)
+        button_layout.addWidget(self.rotate_button)
+        button_layout.addStretch()
+        main_layout.addLayout(button_layout)
         
         # 创建绘图窗口
         self.plot_widget = pg.PlotWidget()
-        layout.addWidget(self.plot_widget)
+        main_layout.addWidget(self.plot_widget)
         
         # 设置绘图属性
         self.plot_widget.setBackground(None)  # 设置背景透明
@@ -44,8 +56,17 @@ class ScrewMap(QWidget):
         self.plot_widget.addItem(self.screw_scatter)
         self.plot_widget.addItem(self.position_scatter)
         
+        self.rotation_angle = 0  # 添加旋转角度属性
         
         # self.setMinimumSize(400, 400)
+        
+    def toggle_axes(self):
+        self.axes_flipped = not self.axes_flipped
+        self.update_plot()
+        
+    def rotate_90_degrees(self):
+        self.rotation_angle = (self.rotation_angle + 90) % 360
+        self.update_plot()
         
     def update_state(self, state):
         self.screws = state.get('screws', [])
@@ -67,18 +88,32 @@ class ScrewMap(QWidget):
         spots = []
         for screw in self.screws:
             color = {
-                '已定位': (255, 255, 0),
+                '已定位': (255, 0, 0),
                 '已完成': (0, 255, 0)
             }.get(screw['status'], (0, 0, 255))
             
             # 根据当前视图比例调整 size
             display_size = screw['position']['allowOffset'] * 2 / pixel_scale
             
+            x, y = screw['position']['x'], screw['position']['y']
+            
+            # 先处理旋转
+            if self.rotation_angle == 90:
+                x, y = -y, x
+            elif self.rotation_angle == 180:
+                x, y = -x, -y
+            elif self.rotation_angle == 270:
+                x, y = y, -x
+                
+            # 再处理xy轴翻转
+            if self.axes_flipped:
+                x, y = y, x
+            
             spots.append({
-                'pos': (screw['position']['x'], screw['position']['y']),
+                'pos': (x, y),
                 'size': display_size,  # 使用调整后的大小
                 'pen': None,
-                'brush': pg.mkBrush(*color, 50),  # 50是透明度
+                'brush': pg.mkBrush(*color, 90),  # 50是透明度
                 'symbol': 'o',
                 'data': screw['tag']
             })
@@ -87,9 +122,18 @@ class ScrewMap(QWidget):
         
         # 更新当前位置
         if self.position:
-            self.position_scatter.setData(
-                [self.position[0]], 
-                [self.position[1]]
-            )
+            x, y = self.position[0], self.position[1]
+            
+            # 同样处理旋转
+            if self.rotation_angle == 90:
+                x, y = -y, x
+            elif self.rotation_angle == 180:
+                x, y = -x, -y
+            elif self.rotation_angle == 270:
+                x, y = y, -x
+                
+            if self.axes_flipped:
+                x, y = y, x
+            self.position_scatter.setData([x], [y])
         else:
             self.position_scatter.clear()

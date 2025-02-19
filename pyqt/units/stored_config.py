@@ -13,7 +13,8 @@ DEFAULT_CONFIG = {
     'imu_center_point_y': 0.0,
     'imu_vertical_h': 1.0,
     'current_sensor_http_base': 'http://192.168.4.1/status',
-    'enable_z_axis_correction': True
+    'imu_com_port': '/dev/ttyUSB0',
+    'enable_z_axis_correction': True,
 }
 
 class Config(QObject):
@@ -41,6 +42,7 @@ class Config(QObject):
     
     def update_env_for_porcessor(self):
         os.environ['CURRENT_SENSOR_HTTP'] = self['current_sensor_http_base']
+        os.environ['IMU_COM_PORT'] = self['imu_com_port']
         os.environ['ENABLE_Z_AXIS_CORRECTION'] = str(self['enable_z_axis_correction'])
 
 

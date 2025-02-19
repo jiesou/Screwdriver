@@ -20,7 +20,7 @@ def open_connection():
             print("[CurrentSensor] 网络已连接")
         except Exception as e:
             print(f"[CurrentSensor] 网络连接失败: {e}")
-            time.sleep(0.1)
+            time.sleep(1)
             response = None
 
 # 模块导入时就尝试建立连接
