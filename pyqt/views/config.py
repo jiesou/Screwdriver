@@ -1,6 +1,5 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QDoubleSpinBox, 
                             QLabel, QLineEdit, QCheckBox, QTabWidget)
-from PyQt6.QtCore import QSignalBlocker
 
 from ..units.state_bus import state_bus
 from ..units.stored_config import stored_config
@@ -48,29 +47,22 @@ class ConfigView(QWidget):
 
         self.http_path_input = QLineEdit()
         self.http_path_input.setText(stored_config['current_sensor_http_base'])
-        
-        def update_http_path(value):
-            stored_config['current_sensor_http_base'] = value
-
-        self.http_path_input.textChanged.connect(update_http_path)
+        self.http_path_input.textChanged.connect(lambda value: stored_config.__setitem__('current_sensor_http_base', value))
         comm_layout.addRow(QLabel('电流传感器HTTP通讯路径'), self.http_path_input)
 
-        self.imu_com_port_input = QLineEdit()
-        self.imu_com_port_input.setText(stored_config['imu_com_port'])
+        self.imu_top_com_port_input = QLineEdit()
+        self.imu_top_com_port_input.setText(stored_config['imu_top_com_port'])
+        self.imu_top_com_port_input.textChanged.connect(lambda value: stored_config.__setitem__('imu_top_com_port', value))
+        comm_layout.addRow(QLabel('顶部IMU通迅串口'), self.imu_top_com_port_input)
 
-        def update_com_port(value):
-            stored_config['imu_com_port'] = value
-        
-        self.imu_com_port_input.textChanged.connect(update_com_port)
-        comm_layout.addRow(QLabel('IMU通迅串口'), self.imu_com_port_input)
+        self.imu_end_com_port_input = QLineEdit()
+        self.imu_end_com_port_input.setText(stored_config['imu_end_com_port'])
+        self.imu_end_com_port_input.textChanged.connect(lambda value: stored_config.__setitem__('imu_end_com_port', value))
+        comm_layout.addRow(QLabel('底部IMU通迅串口'), self.imu_end_com_port_input)
 
         self.z_axis_correction_checkbox = QCheckBox("启用Z轴矫正")
         self.z_axis_correction_checkbox.setChecked(stored_config['enable_z_axis_correction'])
-
-        def update_z_axis_correction(state):
-            stored_config['enable_z_axis_correction'] = bool(state)
-
-        self.z_axis_correction_checkbox.stateChanged.connect(update_z_axis_correction)
+        self.z_axis_correction_checkbox.stateChanged.connect(lambda state: stored_config.__setitem__('enable_z_axis_correction', bool(state)))
         comm_layout.addRow(self.z_axis_correction_checkbox)
 
         # 添加标签页
