@@ -32,8 +32,8 @@ class StateBus(QObject):
     def __init__(self):
         super().__init__()
         self.processor_api.set_screws(stored_config['init_screws'])
-        self.processor_api.imu_api.processor.h = stored_config['imu_vertical_h']
-        self.processor_api.imu_api.processor.center_point = (stored_config['imu_center_point_x'], stored_config['imu_center_point_y'])
+        self.processor_api.imu_top_api.processor.h = stored_config['imu_vertical_h']
+        self.processor_api.imu_top_api.processor.center_point = (stored_config['imu_center_point_x'], stored_config['imu_center_point_y'])
 
 
         # 创建并启动状态拉取线程
@@ -48,12 +48,12 @@ class StateBus(QObject):
             self.processor_api.set_screws(updated_config['init_screws'])
         
         if 'imu_vertical_h' in updated_config:
-            self.processor_api.imu_api.processor.h = updated_config['imu_vertical_h']
+            self.processor_api.imu_top_api.processor.h = updated_config['imu_vertical_h']
         
         if 'imu_center_point_x' in updated_config or 'imu_center_point_y' in updated_config:
             x = updated_config.get('imu_center_point_x', stored_config['imu_center_point_x'])
             y = updated_config.get('imu_center_point_y', stored_config['imu_center_point_y'])
-            self.processor_api.imu_api.processor.center_point = (x, y)
+            self.processor_api.imu_top_api.processor.center_point = (x, y)
 
     @property 
     def state(self) -> Dict[str, Any]:

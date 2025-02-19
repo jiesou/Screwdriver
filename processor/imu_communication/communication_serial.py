@@ -4,7 +4,7 @@ import numpy as np
 from array import array
 
 # 设置正确的串口参数------------------------
-ser_port = os.getenv("imu_top_com_port", "/dev/ttyUSB0")     #此处需要替换为对应使用的串口号，windows系统写成COMx，若是linux则要根据所用系统进行调整如写成/dev/ttyUSBx或/dev/ttySx
+ser_port = "/dev/ttyUSB0"     #这是缺省串口号，应当被下方 read_data 传入的参数覆盖，windows系统写成COMx，若是linux则要根据所用系统进行调整如写成/dev/ttyUSBx或/dev/ttySx
 ser_baudrate = 115200 # 串口波特率
 ser_timeout = 2 # 串口操作超时时间
 
@@ -212,11 +212,13 @@ def Cmd_PackAndTx(ser, pDat, DLen):
         print(f"串口写入错误: {e}")
         raise
 
-def read_data():
+def read_data(serial_port):
+    global ser_port
+    ser_port = serial_port
     while True:  # 外层循环用于重连
         try:
             with serial.Serial(ser_port, ser_baudrate, timeout=ser_timeout) as ser:
-                print("[IMU] 串口已连接")
+                print("[IMU {ser_port}] 串口已连接")
 
                 # 1.发送配置参数
                 params = [0] * 11  # 数组
@@ -253,14 +255,14 @@ def read_data():
                             if result is not None:
                                 yield result
                     except serial.SerialException as e:
-                        print(f"[IMU] 数据读取错误: {e}")
+                        print(f"[IMU {ser_port}] 数据读取错误: {e}")
                         break
                     
         except serial.SerialException as e:
-            print(f"[IMU] 串口连接断开，尝试重新连接... {e}")
+            print(f"[IMU {ser_port}] 串口连接断开，尝试重新连接... {e}")
             time.sleep(1)
         except Exception as e:
-            print(f"[IMU] 未知错误: {e}")
+            print(f"[IMU {ser_port}] 未知错误: {e}")
             time.sleep(1)
 
 def z_axes_to_zero():
@@ -270,4 +272,4 @@ def z_axes_to_zero():
             print("\nz-axes to zero--\n")
             Cmd_PackAndTx(ser, buf, 1)
     except serial.SerialException as e:
-        print(f"[IMU] 串口操作失败: {e}")
+        print(f"[IMU {ser_port}] 串口操作失败: {e}")

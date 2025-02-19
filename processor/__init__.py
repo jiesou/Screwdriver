@@ -5,7 +5,8 @@ import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
-from .imu import ImuAPI
+from .imu_top import ImuTopAPI
+from .imu_end import ImuEndAPI
 from .current import CurrentAPI
 
 
@@ -48,17 +49,27 @@ class ProcessorAPI:
     finished_products = 0
 
     def __init__(self):
-        self.imu_api = ImuAPI()
+        self.imu_top_api = ImuTopAPI()
+        self.imu_end_api = ImuEndAPI()
         self.current_api = CurrentAPI()
-        self.imu_data = None
+        self.imu_top_data = None
+        self.imu_end_data = None
         self.current_data = None
 
-        def get_imu_data(self):
+        def get_imu_top_data(self):
             try:
-                for imu_data in self.imu_api.handle_start():
-                    self.imu_data = imu_data
+                for imu_data in self.imu_top_api.handle_start():
+                    self.imu_top_data = imu_data
             except Exception as e:
-                print("[IMU] 线程故障", e)
+                print("[IMU TOP] 线程故障", e)
+                traceback.print_exc()
+
+        def get_imu_end_data(self):
+            try:
+                for imu_data in self.imu_end_api.handle_start():
+                    self.imu_end_data = imu_data
+            except Exception as e:
+                print("[IMU END] 线程故障", e)
                 traceback.print_exc()
 
         def get_current_data(self):
@@ -69,11 +80,17 @@ class ProcessorAPI:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
 
-        imu_thread = threading.Thread(target=get_imu_data, args=(self,))
-        current_thread = threading.Thread(target=get_current_data, args=(self,))
+        tasks = [
+            (get_imu_top_data, (self,)),
+            (get_imu_end_data, (self,)),
+            (get_current_data, (self,))
+        ]
 
-        imu_thread.start()
-        current_thread.start()
+        threads = []
+        for target, args in tasks:
+            thread = threading.Thread(target=target, args=args)
+            thread.start()
+            threads.append(thread)
         print("======Processor Threads started======")
 
     def set_screws(self, screws):
@@ -102,7 +119,7 @@ class ProcessorAPI:
         #         ]
         #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
                 
-        position = self.imu_api.processor.positions[-1]
+        position = self.imu_top_api.processor.positions[-1]
         located_screw = self.current_screw_map.locate_closest_screw(
             position,
             self.current_screw_map.filter_screws_in_range(position)
@@ -142,7 +159,8 @@ class ProcessorAPI:
             "screws": self.current_screw_map.screws,
             "products_finished": self.finished_products,
             "sensor_connection": {
-                "imu": self.imu_data["connected_fine"] if self.imu_data is not None else False,
+                "imu_top": self.imu_top_data["connected_fine"] if self.imu_top_data is not None else False,
+                "imu_end": self.imu_end_data["connected_fine"] if self.imu_end_data is not None else False,
                 "current": self.current_data["connected_fine"] if self.current_data is not None else False
             }
         }

@@ -17,8 +17,8 @@ def open_connection():
 # 初始化连接
 open_connection()
 
-def read_data():
-    yield from comm.read_data()
+def read_data(*args):
+    yield from comm.read_data(*args)
 
 def z_axes_to_zero():
     comm.z_axes_to_zero()

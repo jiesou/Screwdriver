@@ -1,8 +1,8 @@
 import os
 import numpy as np
-from .communication import read_data
+from ..imu_communication import read_data
 
-class IMUProcessor:
+class ImuEndProcessor:
     h = 1
     center_point = (0.0, 0.0)
 
@@ -44,7 +44,7 @@ class IMUProcessor:
         return [x_final, y_final]
 
     def parse_data(self):
-        for data in read_data():
+        for data in read_data(os.getenv("IMU_END_COM_PORT", "/dev/ttyUSB1")):
             if data is None or 'angle' not in data:
                 yield {
                     "connected_fine": False,
@@ -67,9 +67,9 @@ class IMUProcessor:
             }
 
 
-class ImuAPI:
+class ImuEndAPI:
     def __init__(self):
-        self.processor = IMUProcessor()
+        self.processor = ImuEndProcessor()
 
     def handle_start(self):
         yield from self.processor.parse_data()

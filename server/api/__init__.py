@@ -21,8 +21,8 @@ def reset_z_axes():
 async def start_moving():
     data = await request.get_json()
     processor_api.set_screws(data['screws'])
-    processor_api.imu_api.processor.h = data['h']
-    processor_api.imu_api.processor.center_point = data['center_point']
+    processor_api.imu_top_api.processor.h = data['h']
+    processor_api.imu_top_api.processor.center_point = data['center_point']
     def generate():
         yield "{}\n"
         try:
