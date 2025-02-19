@@ -42,12 +42,13 @@ class App(QMainWindow):
         
         # 位置信息显示
         self.position_label = QLabel("等待操作")
-        self.position_label.setStyleSheet("color: green; font-size: 16px;")
+        self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.position_label.setStyleSheet("color: green; font-size: 18px")
         state_bus.updated.connect(
             lambda data: self.position_label.setText(
-                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'} "
-                f"连接状态：IMU TOP {'已连接' if data['sensor_connection']['imu_top'] else '未连接'}；"
-                f"IMU END {'已连接' if data['sensor_connection']['imu_end'] else '未连接'}；"
+                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'}\n"
+                f"IMU TOP {'已连接' if data['sensor_connection']['imu_top'] else '未连接'}\n"
+                f"IMU END {'已连接' if data['sensor_connection']['imu_end'] else '未连接'}\n"
                 f"电流  {'已连接' if data['sensor_connection']['current'] else '未连接'}"
             ) if data.get('position') else None
         )

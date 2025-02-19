@@ -15,6 +15,7 @@ class ProcessorStateThread(QThread):
         
     def run(self):
         for data_snippet in self.processor_api.handle_start_moving():
+            print(data_snippet['sensor_connection'])
             self.updated.emit(data_snippet)
 
 class StateBus(QObject):

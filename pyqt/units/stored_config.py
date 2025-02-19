@@ -15,7 +15,7 @@ DEFAULT_CONFIG = {
     'current_sensor_http_base': 'http://192.168.4.1/status',
     'imu_top_com_port': '/dev/ttyUSB0',
     'imu_end_com_port': '/dev/ttyUSB1',
-    'enable_z_axis_correction': True,
+    'enable_z_axis_correction': False,
 }
 
 class Config(QObject):
