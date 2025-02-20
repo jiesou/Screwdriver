@@ -127,16 +127,18 @@ class ProcessorAPI:
         x_rad = -np.radians(end_angle['y'])
         y_rad = np.radians(end_angle['x'])
         z_rad = np.radians(end_angle['z'])
+ 
+        # 0.185 是 IMU 到螺丝刀头的固定距离
+        end_h = np.cos(y_rad) *0.185
+
+        # 基于确定的 h 计算偏移位置
+        x = end_h * np.tan(x_rad)
+        y = end_h * np.tan(y_rad)
 
         # 应用 z 轴旋转，对 x 和 y 进行旋转变换
         x_rotated = x * np.cos(z_rad) - y * np.sin(z_rad)
         y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
-        # 0.185 是 IMU 到螺丝刀头的固定距离
-        end_h = np.cos(y_rotated) *0.185
 
-        # 基于确定的 h 计算偏移位置
-        x = end_h * np.tan(x_rotated)
-        y = end_h * np.tan(y_rotated)
 
         return [imu_top_position[0] + x, imu_top_position[1] + y]
 
