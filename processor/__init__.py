@@ -106,16 +106,39 @@ class ProcessorAPI:
     def compute_effector_position(self, l1: float = 1, l2: float = 0.1) -> dict:
         """
         使用前向运动学计算终端位置。
-        l1: 起始点到中间点的弹簧有效长度（可能需要实时测量或预先标定）。
-        l2: 中间点到终端连杆的长度。
-        假设 IMU 数据中提供 "pitch" 和 "roll"（单位°），
-        同时 processor.h 表示起始点与终端之间固定的垂直位置补偿。
+        IMU 数据中提供 "angel"（单位°）和 "position"（单位m）。
+        processor.h 表示起始点与终端之间固定的垂直位置。
         """
+
+        # 在一个 IMU 断开情况下的 backup 方法
+        if "angle" not in self.imu_top_data:
+            return self.imu_end_data["position"]
+        if "angle" not in self.imu_end_data:
+            return self.imu_top_data["position"]
+        
         # 获取两个 IMU 的位置数据
         imu_top_position = self.imu_top_data["position"]
         imu_end_position = self.imu_end_data["position"]
 
-        return [imu_top_position[0] + imu_end_position[0], imu_top_position[1] + imu_end_position[1]]
+        # 得到 imu end 的斜角，从而确认下面三角的 h
+        end_angle = self.imu_end_data["angle"]
+        # 将角度转换为弧度
+        # 屏幕的 x y 和 imu 返回的 x y 相反
+        x_rad = -np.radians(end_angle['y'])
+        y_rad = np.radians(end_angle['x'])
+        z_rad = np.radians(end_angle['z'])
+
+        # 应用 z 轴旋转，对 x 和 y 进行旋转变换
+        x_rotated = x * np.cos(z_rad) - y * np.sin(z_rad)
+        y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
+        # 0.185 是 IMU 到螺丝刀头的固定距离
+        end_h = np.cos(y_rotated) *0.185
+
+        # 基于确定的 h 计算偏移位置
+        x = end_h * np.tan(x_rotated)
+        y = end_h * np.tan(y_rotated)
+
+        return [imu_top_position[0] + x, imu_top_position[1] + y]
 
 
     def requirement_analyze(self):
