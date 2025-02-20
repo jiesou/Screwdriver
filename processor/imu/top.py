@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from .communication import Communicator
+from .communication.serial import SerialCommunicator
 
 class ImuProcessor:
     h = 1
@@ -10,7 +10,7 @@ class ImuProcessor:
     standing = [0, 0]
     screw_tightening = False
 
-    communicator = Communicator(os.getenv("IMU_TOP_COM_PORT", "/dev/ttyUSB0"))
+    communicator = SerialCommunicator(os.getenv("IMU_TOP_COM_PORT", "/dev/ttyUSB0"))
 
     def at_initial_position(self, data):
         is_standing = data['offset']['x'] == 0 and data['offset']['y'] == 0 and data['offset']['z'] == 0

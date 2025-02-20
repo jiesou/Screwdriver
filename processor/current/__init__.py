@@ -1,4 +1,4 @@
-from .communication import read_data
+from .communication import CurrentCommunicator
 
 
 class CurrentProcessor:
@@ -7,8 +7,10 @@ class CurrentProcessor:
         self.threshold = 15.0
         self.appliance_on = False  # 用于跟踪设备状态
 
+        self.communicator = CurrentCommunicator()
+
     def parse_data(self):
-        for data in read_data():
+        for data in self.communicator.read_data():
             if data is None:
                 yield {
                     "connected_fine": False,
