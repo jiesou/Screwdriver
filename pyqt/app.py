@@ -74,3 +74,7 @@ class App(QMainWindow):
             # 直接更新配置
             stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - x)
             stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
+    
+    def closeEvent(self, event):
+        os._exit(0)
+        return super().closeEvent(event)
