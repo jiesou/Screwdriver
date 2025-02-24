@@ -1,6 +1,7 @@
 import threading
 from typing import Dict, Any
 from PyQt6.QtCore import QObject, pyqtSignal, QThread, pyqtSlot
+from PyQt6.QtWidgets import QWidget, QVBoxLayout
 
 from processor import ProcessorAPI
 from .stored_config import stored_config

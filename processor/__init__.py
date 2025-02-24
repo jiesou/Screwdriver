@@ -105,66 +105,75 @@ class ProcessorAPI:
 
     def compute_effector_position(self) -> dict:
         """
-        根据 top 和 end IMU 的 angle 数据计算终端位置（二维）。
-        
-        假设：
-        - 起始点 S 为 (0,0,0)
-        - S 到中间点 M 的距离（弹簧长度） L_spring = 0.3
-        - 中间点 M 到连杆传感器所在点的距离 L_connector = 0.1
-        - 中间点 M 到终端位置的距离 L_effector = 0.18 (因此终端距离传感器 0.08)
-        
+        根据 top 和 end IMU 的 angle 数据计算终端位置。
         注意：忽略传感器返回的不可信 "position" 字段，仅使用 "angle" 数据计算方向。
         """
         import math
-        # 若任一传感器无 "angle" 数据，则直接返回另一端的 "position"（备份方案）
+        # 若任一传感器无 "angle" 数据，则直接返回另一端的 position（备份方案）
         if "angle" not in self.imu_top_data:
             return self.imu_end_data["position"]
         if "angle" not in self.imu_end_data:
             return self.imu_top_data["position"]
+        
 
-        def compute_normalized_direction(angle: dict) -> tuple:
-            # 根据 top.py 中的计算方法，只计算水平方向（二维）
-            x_rad = -math.radians(angle.get('y', 0))
-            y_rad = math.radians(angle.get('x', 0))
-            z_rad = math.radians(angle.get('z', 0))
-            x_off = math.tan(x_rad)
-            y_off = math.tan(y_rad)
-            # 如果启用 Z 轴校正，则应用旋转变换
-            if os.environ.get('ENABLE_Z_AXIS_CORRECTION') == 'True':
-                x_rot = x_off * math.cos(z_rad) - y_off * math.sin(z_rad)
-                y_rot = x_off * math.sin(z_rad) + y_off * math.cos(z_rad)
-            else:
-                x_rot = x_off
-                y_rot = y_off
-            norm = math.sqrt(x_rot * x_rot + y_rot * y_rot)
-            if norm == 0:
-                return (0, 0)
-            return (x_rot / norm, y_rot / norm)
+        # TOP IMU 参数
+        top_angles = self.imu_top_data["angle"]
+        # 将角度转换为弧度
+        tx_rad = np.radians(top_angles['x'])
+        ty_rad = np.radians(top_angles['y'])
+        tz_rad = np.radians(top_angles['z'])
 
-        d_top = compute_normalized_direction(self.imu_top_data["angle"])  # top 传感器方向
-        d_end = compute_normalized_direction(self.imu_end_data["angle"])  # end 传感器方向
+        # END IMU 参数（位于 X=0.5, Y=0.07, Z=-1 处）
+        end_origin = np.array([0.5, 0.07, -1.0])
+        end_angles = self.imu_end_data["angle"]
+        ex_rad = np.radians(end_angles['x'])
+        ey_rad = np.radians(end_angles['y'])
+        ez_rad = np.radians(end_angles['z'])
 
-        # 固定参数（单位：米）
-        L_spring = 0.3      # 起始点 S 到中间点 M
-        L_connector = 0.1   # 中间点 M 到传感器所在点（第二个点）
-        L_effector = 0.18   # 中间点 M 到终端位置
+        # 计算两个方向向量
+        # TOP方向向量（从原点出发）
+        top_dir = np.array([
+            math.tan(ty_rad),  # x 分量
+            math.tan(tx_rad),  # y 分量
+            -1.0              # z 分量，向下为负
+        ])
+        top_dir = top_dir / np.linalg.norm(top_dir)  # 归一化
 
-        # 假设起始点 S 固定为原点 (0, 0, 0)
-        S = (0.0, 0.0, 0.0)
-        # 计算中间点 M（沿 top 传感器方向延伸 L_spring）
-        M = (S[0] + L_spring * d_top[0],
-            S[1] + L_spring * d_top[1],
-            0.0)
-        # 如果需要，可以计算传感器所在点 p2（沿 end 传感器方向，从 M 延伸 L_connector）
-        p2 = (M[0] + L_connector * d_end[0],
-            M[1] + L_connector * d_end[1],
-            0.0)
-        # 终端位置 T：从中间点 M 沿 end 传感器方向延伸 L_effector
-        T = (M[0] + L_effector * d_end[0],
-            M[1] + L_effector * d_end[1],
-            0.0)
+        # END方向向量（从end_origin出发）
+        end_dir = np.array([
+            math.tan(ey_rad),  # x 分量
+            math.tan(ex_rad),  # y 分量
+            1.0               # z 分量，向上为正
+        ])
+        end_dir = end_dir / np.linalg.norm(end_dir)  # 归一化
 
-        return [T[0], T[1]]
+        # 计算两条射线的最近点
+        # 参考: http://geomalgorithms.com/a07-_distance.html
+        w0 = np.array([0, 0, 0]) - end_origin  # 两个起点之间的向量
+        a = np.dot(top_dir, top_dir)
+        b = np.dot(top_dir, end_dir)
+        c = np.dot(end_dir, end_dir)
+        d = np.dot(top_dir, w0)
+        e = np.dot(end_dir, w0)
+        
+        # 计算参数方程的系数
+        denom = a * c - b * b
+        if denom < 1e-6:  # 平行情况处理
+            sc = 0.0
+            tc = d / b if b > 1e-6 else 0.0
+        else:
+            sc = (b * e - c * d) / denom
+            tc = (a * e - b * d) / denom
+
+        # 计算两条射线上的最近点
+        top_point = np.array([0, 0, 0]) + top_dir * sc
+        end_point = end_origin + end_dir * tc
+
+        # 取两点的中点作为估计的终端位置
+        end_effector = (top_point + end_point) / 2.0
+
+        # 返回 xy 平面上的投影坐标（如果需要 z 坐标也可以返回）
+        return [float(end_effector[0]), float(end_effector[1])]
 
 
     def requirement_analyze(self):
