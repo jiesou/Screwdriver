@@ -103,44 +103,68 @@ class ProcessorAPI:
         self.screw_map: ScrewMap = ScrewMap(screws)
         self.current_screw_map = copy.deepcopy(self.screw_map)
 
-    def compute_effector_position(self, l1: float = 1, l2: float = 0.1) -> dict:
+    def compute_effector_position(self) -> dict:
         """
-        使用前向运动学计算终端位置。
-        IMU 数据中提供 "angel"（单位°）和 "position"（单位m）。
-        processor.h 表示起始点与终端之间固定的垂直位置。
+        根据 top 和 end IMU 的 angle 数据计算终端位置（二维）。
+        
+        假设：
+        - 起始点 S 为 (0,0,0)
+        - S 到中间点 M 的距离（弹簧长度） L_spring = 0.3
+        - 中间点 M 到连杆传感器所在点的距离 L_connector = 0.1
+        - 中间点 M 到终端位置的距离 L_effector = 0.18 (因此终端距离传感器 0.08)
+        
+        注意：忽略传感器返回的不可信 "position" 字段，仅使用 "angle" 数据计算方向。
         """
-
-        # 在一个 IMU 断开情况下的 backup 方法
+        import math
+        # 若任一传感器无 "angle" 数据，则直接返回另一端的 "position"（备份方案）
         if "angle" not in self.imu_top_data:
             return self.imu_end_data["position"]
         if "angle" not in self.imu_end_data:
             return self.imu_top_data["position"]
-        
-        # 获取两个 IMU 的位置数据
-        imu_top_position = self.imu_top_data["position"]
-        imu_end_position = self.imu_end_data["position"]
 
-        # 得到 imu end 的斜角，从而确认下面三角的 h
-        end_angle = self.imu_end_data["angle"]
-        # 将角度转换为弧度
-        # 屏幕的 x y 和 imu 返回的 x y 相反
-        x_rad = -np.radians(end_angle['y'])
-        y_rad = np.radians(end_angle['x'])
-        z_rad = np.radians(end_angle['z'])
- 
-        # 0.185 是 IMU 到螺丝刀头的固定距离
-        end_h = np.cos(y_rad) *0.185
+        def compute_normalized_direction(angle: dict) -> tuple:
+            # 根据 top.py 中的计算方法，只计算水平方向（二维）
+            x_rad = -math.radians(angle.get('y', 0))
+            y_rad = math.radians(angle.get('x', 0))
+            z_rad = math.radians(angle.get('z', 0))
+            x_off = math.tan(x_rad)
+            y_off = math.tan(y_rad)
+            # 如果启用 Z 轴校正，则应用旋转变换
+            if os.environ.get('ENABLE_Z_AXIS_CORRECTION') == 'True':
+                x_rot = x_off * math.cos(z_rad) - y_off * math.sin(z_rad)
+                y_rot = x_off * math.sin(z_rad) + y_off * math.cos(z_rad)
+            else:
+                x_rot = x_off
+                y_rot = y_off
+            norm = math.sqrt(x_rot * x_rot + y_rot * y_rot)
+            if norm == 0:
+                return (0, 0)
+            return (x_rot / norm, y_rot / norm)
 
-        # 基于确定的 h 计算偏移位置
-        x = end_h * np.tan(x_rad)
-        y = end_h * np.tan(y_rad)
+        d_top = compute_normalized_direction(self.imu_top_data["angle"])  # top 传感器方向
+        d_end = compute_normalized_direction(self.imu_end_data["angle"])  # end 传感器方向
 
-        # 应用 z 轴旋转，对 x 和 y 进行旋转变换
-        x_rotated = x * np.cos(z_rad) - y * np.sin(z_rad)
-        y_rotated = x * np.sin(z_rad) + y * np.cos(z_rad)
+        # 固定参数（单位：米）
+        L_spring = 0.3      # 起始点 S 到中间点 M
+        L_connector = 0.1   # 中间点 M 到传感器所在点（第二个点）
+        L_effector = 0.18   # 中间点 M 到终端位置
 
+        # 假设起始点 S 固定为原点 (0, 0, 0)
+        S = (0.0, 0.0, 0.0)
+        # 计算中间点 M（沿 top 传感器方向延伸 L_spring）
+        M = (S[0] + L_spring * d_top[0],
+            S[1] + L_spring * d_top[1],
+            0.0)
+        # 如果需要，可以计算传感器所在点 p2（沿 end 传感器方向，从 M 延伸 L_connector）
+        p2 = (M[0] + L_connector * d_end[0],
+            M[1] + L_connector * d_end[1],
+            0.0)
+        # 终端位置 T：从中间点 M 沿 end 传感器方向延伸 L_effector
+        T = (M[0] + L_effector * d_end[0],
+            M[1] + L_effector * d_end[1],
+            0.0)
 
-        return [imu_top_position[0] + x, imu_top_position[1] + y]
+        return [T[0], T[1]]
 
 
     def requirement_analyze(self):
