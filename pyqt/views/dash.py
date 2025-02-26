@@ -5,6 +5,7 @@ from .learn import LearnView
 from ..components.screw_map import ScrewMap
 from ..components.screw_table import ScrewTable
 from ..components.csv_reader import CsvReader
+from ..components.ploy import RayVisualizer
 
 from ..units.state_bus import state_bus
 
@@ -37,7 +38,7 @@ class DashView(QWidget):
         layout.addWidget(left_panel)
         
         # 添加螺丝地图
-        self.screw_map = ScrewMap(state_update_on=state_bus.updated)
+        self.screw_map = RayVisualizer(state_update_on=state_bus.updated)
         layout.addWidget(self.screw_map)
 
     def open_learn_dialog(self):
