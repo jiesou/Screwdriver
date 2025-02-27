@@ -1,6 +1,6 @@
 import copy, os
 import threading
-import time
+import time, math
 import traceback
 import numpy as np
 from dotenv import load_dotenv
@@ -108,13 +108,61 @@ class ProcessorAPI:
         根据 top 和 end IMU 的 angle 数据计算终端位置。
         注意：忽略传感器返回的不可信 "position" 字段，仅使用 "angle" 数据计算方向。
         """
-        # 若任一传感器无 "angle" 数据，则直接返回另一端的 position（备份方案）
-        if "angle" not in self.imu_top_data:
-            return self.imu_end_data["position"]
+        # 若 END 传感器无 "angle" 数据，则直接返回 TOP 端的 position（备份方案）
+        if "angle" not in self.imu_end_data:
+            return [0, 0, 0]
         if "angle" not in self.imu_end_data:
             return self.imu_top_data["position"]
         
-        return [0,0,0]
+        tx_rad = np.radians(self.imu_top_data['angle']['x'])
+        ty_rad = np.radians(-self.imu_top_data['angle']['y'])
+        top_start = np.array([0, 0, 0])
+        top_dir = np.array([
+            math.tan(ty_rad),   
+            math.tan(tx_rad),   
+            -1.0               
+        ])
+        # 归一化：只保留方向信息。并固定射线长度为 -1.0
+        top_dir = top_dir / np.linalg.norm(top_dir)
+        
+        # END射线计算
+        ex_rad = np.radians(self.imu_end_data['angle']['x'])
+        ey_rad = np.radians(-self.imu_end_data['angle']['y'])
+        end_start = np.array([0.5, 0.07, -1.0])
+        end_dir = np.array([
+            math.tan(ey_rad),   
+            math.tan(ex_rad),   
+            1.0                
+        ])
+        # 归一化：只保留方向信息。并固定射线长度为 -1.0
+        end_dir = end_dir / np.linalg.norm(end_dir)
+        
+
+        # ****计算两条射线上的最近点****
+        # 向量：如一个向量 V = [vx, vy, vz]，vx 就是 V 在 x 轴的分量，表示水平方向有多长。
+
+        # 计算从 end_start 指向 top_start 的向量 w0
+        w0 = top_start - end_start
+
+        # 分别计算点积值
+        a = np.dot(top_dir, top_dir)       # top_dir 自己的长度平方（归一化后为1）
+        b = np.dot(top_dir, end_dir)        # 两个方向在相同坐标轴上的"重合"程度
+        c = np.dot(end_dir, end_dir)         # end_dir 自己的长度平方（归一化后为1）
+        d = np.dot(top_dir, w0)              # w0 在 top_dir 方向上的分量（投影长度）
+        e = np.dot(end_dir, w0)              # w0 在 end_dir 方向上的分量
+
+        # 计算参数 sc 和 tc，表示从各射线起点沿方向走多少长度可以到达最近点
+        # 计算时只考虑方向，不考虑长度（点积后）
+        sc = (b * e - c * d) / (a * c - b * b)
+        tc = (a * e - b * d) / (a * c - b * b)
+
+        # 利用参数计算两条射线上的最近点坐标
+        closest_point_top = top_start + sc * top_dir
+        closest_point_end = end_start + tc * end_dir
+
+        # 求中点
+        mid_point = (closest_point_top + closest_point_end) / 2
+        return mid_point
 
 
     def requirement_analyze(self):

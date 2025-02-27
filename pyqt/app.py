@@ -45,12 +45,14 @@ class App(QMainWindow):
         self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.position_label.setStyleSheet("color: green; font-size: 18px")
         state_bus.updated.connect(
-            lambda data: self.position_label.setText(
-                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'}\n"
-                f"IMU TOP {'已连接' if data['sensor_connection']['imu_top'] else '未连接'}\n"
-                f"IMU END {'已连接' if data['sensor_connection']['imu_end'] else '未连接'}\n"
-                f"电流  {'已连接' if data['sensor_connection']['current'] else '未连接'}"
-            ) if data.get('position') else None
+            lambda state: self.position_label.setText(
+            f"X: {state['position'][0]*100:.1f} cm Y: {state['position'][1]*100:.1f} cm" +
+            (f" Z: {state['position'][2]*100:.1f} cm" if len(state['position']) > 2 else " Z: N/A") + "\n"
+            f" {'拧螺丝中' if state.get('is_screw_tightening') else '未拧螺丝'}\n"
+            f"IMU TOP {'已连接' if state['sensor_connection']['imu_top'] else '未连接'}\n"
+            f"IMU END {'已连接' if state['sensor_connection']['imu_end'] else '未连接'}\n"
+            f"电流  {'已连接' if state['sensor_connection']['current'] else '未连接'}"
+            ) if 'position' in state else None
         )
         
         toolbar_layout.addStretch()

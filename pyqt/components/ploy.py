@@ -95,7 +95,7 @@ class RayVisualizer(QWidget):
         self.end_angles = state['imu_end_data'].get('angle', {'x': 0, 'y': 0})
 
     def update_rays(self):
-        """更新射线显示"""
+        """更新射线显示 - 考虑固定长度连杆模型"""
         try:
             # TOP射线计算
             tx_rad = np.radians(self.top_angles['x'])
@@ -104,7 +104,7 @@ class RayVisualizer(QWidget):
             top_dir = np.array([
                 math.tan(ty_rad),   
                 math.tan(tx_rad),   
-                -1.0               
+                -1.0
             ])
             # 归一化：只保留方向信息。并固定射线长度为 -1.0
             top_dir = top_dir / np.linalg.norm(top_dir)
@@ -121,24 +121,6 @@ class RayVisualizer(QWidget):
             # 归一化：只保留方向信息。并固定射线长度为 -1.0
             end_dir = end_dir / np.linalg.norm(end_dir)
             
-            # 计算射线末端
-            ray_length = 2.0
-            top_end = top_start + top_dir * ray_length
-            end_end = end_start + end_dir * ray_length
-            
-            # 更新射线数据
-            self.top_line.set_data_3d([top_start[0], top_end[0]], 
-                                    [top_start[1], top_end[1]], 
-                                    [top_start[2], top_end[2]])
-            
-            self.end_line.set_data_3d([end_start[0], end_end[0]], 
-                                    [end_start[1], end_end[1]], 
-                                    [end_start[2], end_end[2]])
-            
-            # 更新点数据
-            self.top_point._offsets3d = ([top_start[0]], [top_start[1]], [top_start[2]])
-            self.end_point._offsets3d = ([end_start[0]], [end_start[1]], [end_start[2]])
-            
             # ****计算两条射线上的最近点****
             # 向量：如一个向量 V = [vx, vy, vz]，vx 就是 V 在 x 轴的分量，表示水平方向有多长。
 
@@ -152,26 +134,56 @@ class RayVisualizer(QWidget):
             d = np.dot(top_dir, w0)              # w0 在 top_dir 方向上的分量（投影长度）
             e = np.dot(end_dir, w0)              # w0 在 end_dir 方向上的分量
 
+            # TODO 平行处理
+
             # 计算参数 sc 和 tc，表示从各射线起点沿方向走多少长度可以到达最近点
             # 计算时只考虑方向，不考虑长度（点积后）
             sc = (b * e - c * d) / (a * c - b * b)
             tc = (a * e - b * d) / (a * c - b * b)
 
-            # 利用参数计算两条射线上的最近点坐标
+           # 计算最近点
             closest_point_top = top_start + sc * top_dir
             closest_point_end = end_start + tc * end_dir
-
-            # 更新最近点连线
-            self.closest_line[0].set_data_3d([closest_point_top[0], closest_point_end[0]],
-                                           [closest_point_top[1], closest_point_end[1]],
-                                           [closest_point_top[2], closest_point_end
-                                           [2]])
-
-            # 求中点
+            
+            # 计算当前最近点之间的距离
+            closest_distance = np.linalg.norm(closest_point_end - closest_point_top)
+            
+            # 连杆固定长度
+            target_distance = 0.15
+            
+            # 计算连杆中心点(最近点的中点)
             mid_point = (closest_point_top + closest_point_end) / 2
+            
+            # 使用固定的垂直向上方向作为连杆方向（确保TOP严格在END的上方）
+            link_dir = np.array([0, 0, 1])  # 垂直向上的单位向量
+            
+            # 根据固定长度计算连杆两端点
+            adjusted_point_top = mid_point + link_dir * target_distance
+            adjusted_point_end = mid_point - link_dir * target_distance
+            
+            # 计算连杆中点
+            mid_point = (adjusted_point_top + adjusted_point_end) / 2
+            
 
-            self.mid_point._offsets3d = ([mid_point[0]], [mid_point[1]], [mid_point
-            [2]])
+            # 更新射线显示 (只显示到连接点)
+            self.top_line.set_data_3d([top_start[0], adjusted_point_top[0]], 
+                                    [top_start[1], adjusted_point_top[1]], 
+                                    [top_start[2], adjusted_point_top[2]])
+            
+            self.end_line.set_data_3d([end_start[0], adjusted_point_end[0]], 
+                                    [end_start[1], adjusted_point_end[1]], 
+                                    [end_start[2], adjusted_point_end[2]])
+            
+            # 更新连杆线
+            self.closest_line[0].set_data_3d([adjusted_point_top[0], adjusted_point_end[0]],
+                                        [adjusted_point_top[1], adjusted_point_end[1]],
+                                        [adjusted_point_top[2], adjusted_point_end[2]])
+            
+            # 更新点显示
+            self.top_point._offsets3d = ([top_start[0]], [top_start[1]], [top_start[2]])
+            self.end_point._offsets3d = ([end_start[0]], [end_start[1]], [end_start[2]])
+            self.mid_point._offsets3d = ([mid_point[0]], [mid_point[1]], [mid_point[2]])
+            
 
 
             # 仅更新必要部分
