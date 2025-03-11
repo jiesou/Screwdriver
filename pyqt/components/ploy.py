@@ -76,7 +76,7 @@ class RayVisualizer(QWidget):
                                      [end_start[2], end_end[2]], 
                                      'b-', linewidth=2, label='END')
         
-        self.closest_line = self.ax.plot([0, 0], [0, 0], [0, 0], 'g--', linewidth=2, label='Closest Points')
+        self.closest_line = self.ax.plot([0, 0], [0, 0], [0, 0], 'g--', linewidth=1, label='Closest Points')
         
         # 创建点对象
         self.mid_point = self.ax.scatter([0], [0], [0], color='green', s=50)
@@ -100,6 +100,7 @@ class RayVisualizer(QWidget):
             # TOP射线计算
             tx_rad = np.radians(self.top_angles['x'])
             ty_rad = np.radians(-self.top_angles['y'])
+            # 射线起点固定
             top_start = np.array([0, 0, 0])
             top_dir = np.array([
                 math.tan(ty_rad),   
@@ -112,6 +113,7 @@ class RayVisualizer(QWidget):
             # END射线计算
             ex_rad = np.radians(self.end_angles['x'])
             ey_rad = np.radians(-self.end_angles['y'])
+            # 射线起点固定
             end_start = np.array([0.5, 0.07, -1.0])
             end_dir = np.array([
                 math.tan(ey_rad),   
@@ -122,45 +124,40 @@ class RayVisualizer(QWidget):
             end_dir = end_dir / np.linalg.norm(end_dir)
             
             # ****计算两条射线上的最近点****
-            # 向量：如一个向量 V = [vx, vy, vz]，vx 就是 V 在 x 轴的分量，表示水平方向有多长。
-
-            # 计算从 end_start 指向 top_start 的向量 w0
-            w0 = top_start - end_start
-
+            top_minus_end = top_start - end_start
             # 分别计算点积值
-            a = np.dot(top_dir, top_dir)       # top_dir 自己的长度平方（归一化后为1）
-            b = np.dot(top_dir, end_dir)        # 两个方向在相同坐标轴上的"重合"程度
-            c = np.dot(end_dir, end_dir)         # end_dir 自己的长度平方（归一化后为1）
-            d = np.dot(top_dir, w0)              # w0 在 top_dir 方向上的分量（投影长度）
-            e = np.dot(end_dir, w0)              # w0 在 end_dir 方向上的分量
+            # 两点之间的向量差为：D(t,s)=P(t)−Q(s)=(top_start−end_start)+t⋅top_dir−s⋅end_dir
+            # 目标是最小化‖D(s, t)‖²
+            a = 1 # np.dot(top_dir, top_dir)       # top_dir 自己的长度平方（归一化后为1）
+            b = np.dot(top_dir, end_dir)        # b 是两射线方向的余弦相似度，反映方向一致性：b=1 两射线同方向；b=0 两射线垂直；b=-1 两射线反方向
+            c = 1 # np.dot(end_dir, end_dir)         # end_dir 自己的长度平方（归一化后为1）
+            d = np.dot(top_dir, top_minus_end)              # w0 在 top_dir 方向上的分量
+            e = np.dot(end_dir, top_minus_end)              # w0 在 end_dir 方向上的分量
 
             # TODO 平行处理
 
-            # 计算参数 sc 和 tc，表示从各射线起点沿方向走多少长度可以到达最近点
-            # 计算时只考虑方向，不考虑长度（点积后）
-            sc = (b * e - c * d) / (a * c - b * b)
-            tc = (a * e - b * d) / (a * c - b * b)
+            # 计算参数 top_distance（上文的 s）和 top_distance（上文的 t），表示从各射线起点沿方向走多少长度可以到达最近点
+            det = (a * c - b * b)
+            top_distance = (b * e - c * d) / det
+            end_distance = (a * e - b * d) / det
 
-           # 计算最近点
-            closest_point_top = top_start + sc * top_dir
-            closest_point_end = end_start + tc * end_dir
-            
-            # 计算当前最近点之间的距离
+            # 确保我们使用射线上的点（参数大于等于0）
+            # 如果计算的参数为负，意味着最近点在射线起点的反方向
+            top_distance = max(0.0, top_distance)
+            end_distance = max(0.0, end_distance)
+
+            # 计算最近点
+            closest_point_top = top_start + top_distance * top_dir
+            closest_point_end = end_start + end_distance * end_dir
+                
+            # 计算当前最近点之间的欧几里得范数（即模长，即三维距离）
             closest_distance = np.linalg.norm(closest_point_end - closest_point_top)
-            
-            # 连杆固定长度
-            target_distance = 0.15
-            
-            # 计算连杆中心点(最近点的中点)
-            mid_point = (closest_point_top + closest_point_end) / 2
-            
-            # 使用固定的垂直向上方向作为连杆方向（确保TOP严格在END的上方）
-            link_dir = np.array([0, 0, 1])  # 垂直向上的单位向量
-            
-            # 根据固定长度计算连杆两端点
-            adjusted_point_top = mid_point + link_dir * target_distance
-            adjusted_point_end = mid_point - link_dir * target_distance
-            
+            print(f"最近点距离: {closest_distance:.4f}")
+
+            # 直接使用计算出的最近点，不做额外约束
+            adjusted_point_top = closest_point_top
+            adjusted_point_end = closest_point_end
+
             # 计算连杆中点
             mid_point = (adjusted_point_top + adjusted_point_end) / 2
             

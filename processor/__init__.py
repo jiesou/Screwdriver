@@ -110,8 +110,6 @@ class ProcessorAPI:
         """
         # 若 END 传感器无 "angle" 数据，则直接返回 TOP 端的 position（备份方案）
         if "angle" not in self.imu_end_data:
-            return [0, 0, 0]
-        if "angle" not in self.imu_end_data:
             return self.imu_top_data["position"]
         
         tx_rad = np.radians(self.imu_top_data['angle']['x'])
