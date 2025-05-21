@@ -3,10 +3,10 @@ import os
 
 DEFAULT_CONFIG = {
     'init_screws': [
-        { "tag": "1", "position": { "x": 0.05, "y": 0.2, "allowOffset": 0.08 } },
-        { "tag": "2", "position": { "x": 0.05, "y": -0.2, "allowOffset": 0.08 } },
-        { "tag": "3", "position": { "x": 0.5, "y": 0.2, "allowOffset": 0.1 } },
-        { "tag": "4", "position": { "x": 0.5, "y": -0.2, "allowOffset": 0.1 } }
+        { "tag": "1", "status": "", "position": { "x": 0.05, "y": 0.2, "allowOffset": 0.08 } },
+        { "tag": "2", "status": "", "position": { "x": 0.05, "y": -0.2, "allowOffset": 0.08 } },
+        { "tag": "3", "status": "", "position": { "x": 0.5, "y": 0.2, "allowOffset": 0.1 } },
+        { "tag": "4", "status": "", "position": { "x": 0.5, "y": -0.2, "allowOffset": 0.1 } }
     ],
     'map_physics_width': 2.0,
     'imu_center_point_x': 0.0,

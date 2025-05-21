@@ -210,7 +210,7 @@ class ProcessorAPI:
 
         if located_screw is not None and located_screw["status"] != "已完成":
             located_screw["status"] = "已定位"
-            if self.current_data["is_working"]:
+            if self.current_data is not None and self.current_data["is_working"]:
                 located_screw["status"] = "已完成"
                 # “拧紧螺丝状态”继承到下一个孔位
                 self.current_api.processor.is_working = False
