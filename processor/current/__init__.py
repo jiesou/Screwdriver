@@ -1,4 +1,4 @@
-from .communication import read_data
+from .communication import CurrentCommunicator
 
 
 class CurrentProcessor:
@@ -7,15 +7,14 @@ class CurrentProcessor:
         self.threshold = 15.0
         self.appliance_on = False  # 用于跟踪设备状态
 
+        self.communicator = CurrentCommunicator()
+
     def parse_data(self):
-        for data in read_data():
+        for data in self.communicator.read_data():
             if data is None:
-                yield {
-                    "connected_fine": False,
-                    "is_working": False
-                }
+                yield None
                 continue
-            frequency = data['frequency']
+            frequency = float(data.get('frequency', 0))
             if data['btn_pressed']:
                 # 按钮按下时，模拟螺丝刀工作
                 yield {
@@ -35,10 +34,9 @@ class CurrentProcessor:
             }
 
 
-class CurrentAPI:
+class API:
     def __init__(self):
         self.processor = CurrentProcessor()
 
     def handle_start(self):
         yield from self.processor.parse_data()
-

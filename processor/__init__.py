@@ -1,12 +1,13 @@
 import copy, os
+from re import A
 import threading
 import time
 import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
-from .imu import API
-from .current import CurrentAPI
+from .imu import API as ImuAPI
+from .current import API as CurrentAPI
 
 
 class ScrewMap:
@@ -48,15 +49,22 @@ class ProcessorAPI:
     finished_products = 0
 
     def __init__(self):
-        self.imu_api = API()
+        self.imu_api = ImuAPI()
         self.current_api = CurrentAPI()
-        self.imu_data = None
-        self.current_data = None
+        self.imu_data = {
+            "connected_fine": False,
+            "position": [0, 0, 0]
+        }
+        self.current_data = {
+            "connected_fine": False,
+            "is_working": False
+        }
 
         def get_imu_data(self):
             try:
                 for data in self.imu_api.handle_start():
-                    self.imu_data = data
+                    if data is not None:
+                        self.imu_data = data
             except Exception as e:
                 print("[IMU] 线程故障", e)
                 traceback.print_exc()
@@ -64,7 +72,8 @@ class ProcessorAPI:
         def get_current_data(self):
             try:
                 for data in self.current_api.handle_start():
-                    self.current_data = data
+                    if data is not None:
+                        self.current_data = data
             except Exception as e:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()

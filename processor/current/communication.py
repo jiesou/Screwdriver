@@ -16,7 +16,7 @@ class CurrentCommunicator:
             try:
                 self.response = requests.get(
                     os.getenv("CURRENT_SENSOR_HTTP",
-                              "http://192.168.4.1/status"),
+                              "http://192.168.4.1/api/status"),
                     stream=True,
                     timeout=2
                 )
@@ -38,12 +38,11 @@ class CurrentCommunicator:
                         try:
                             # 将 JSON 数据转换为字符串
                             data_str = line[6:]
-                            yield data_str
-                            yield json.loads(line[6:])
+                            yield json.loads(data_str)
                         except json.JSONDecodeError:
                             continue
             except Exception as e:
-                print(f"[CurrentSensor] 网络连接断开: {e}")
+                print(f"[CurrentSensor] 网络连接断开: {e.__class__.__name__}")
                 time.sleep(1)
                 self.response = None
                 self.open_connection()

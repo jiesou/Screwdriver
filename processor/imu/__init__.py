@@ -48,10 +48,7 @@ class ImuProcessor:
     def parse_data(self):
         for data in self.communicator.read_data():
             if data is None or 'angle' not in data:
-                yield {
-                    "connected_fine": False,
-                    "position": [0, 0, 0]
-                }
+                yield None
                 continue
 
             position = self.compute_position(data['angle'])
