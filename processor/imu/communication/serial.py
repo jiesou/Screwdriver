@@ -256,13 +256,16 @@ class SerialCommunicator:
                                     yield result
                         except serial.SerialException as e:
                             print(f"[IMU {self.ser_port}] 数据读取错误: {e}")
+                            yield None
                             break
                     
             except serial.SerialException as e:
                 print(f"[IMU {self.ser_port}] 串口连接断开，尝试重新连接... {e}")
+                yield None
                 time.sleep(1)
             except Exception as e:
                 print(f"[IMU {self.ser_port}] 未知错误: {e}")
+                yield None
                 time.sleep(1)
 
     def z_axes_to_zero(self):
