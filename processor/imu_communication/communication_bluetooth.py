@@ -245,7 +245,7 @@ class AnyDevice(gatt.Device):
 
 device = None
 manager = None
-def init_bluetooth():
+def init_bluetooth(args=None):
     global device, manager
     host = None
     port = 6666

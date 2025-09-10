@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from .communication import read_data
+from ..imu_communication import read_data
 
 class IMUProcessor:
     h = 1
@@ -44,7 +44,7 @@ class IMUProcessor:
         return [x_final, y_final]
 
     def parse_data(self):
-        for data in read_data():
+        for data in read_data(os.getenv("IMU_COM_PORT", "/dev/ttyUSB0")):
             if data is None or 'angle' not in data:
                 yield {
                     "connected_fine": False,
