@@ -7,43 +7,38 @@ import os
 response = None
 results = []
 
+
+class CurrentCommunicator:
+    response = None
+
     def open_connection(self):
         if self.response is None:
             try:
                 self.response = requests.get(
-                    os.getenv("CURRENT_SENSOR_HTTP", "http://ESP-1720F6.lan/status"),
+                    os.getenv("CURRENT_SENSOR_HTTP",
+                              "http://192.168.4.1/status"),
                     stream=True,
-                    timeout=1
+                    timeout=2
                 )
                 # 后端的 http 故障也直接抛出异常
                 self.response.raise_for_status()
                 print("[CurrentSensor] 网络已连接")
             except Exception as e:
                 print(f"[CurrentSensor] 网络连接失败: {e}")
-                time.sleep(1)
                 self.response = None
-                self.open_connection()
 
     def __init__(self):
         self.open_connection()
 
-# 模块导入时就尝试建立连接
-open_connection()
-
-def read_data():
-    global response, results
-    
-    while True:
-        if not results:
-            if response is None:
-                open_connection()
-                yield None
-                continue
-                
+    def read_data(self):
+        while True:
             try:
-                for line in response.iter_lines(decode_unicode=True):
+                for line in self.response.iter_lines(chunk_size=1, decode_unicode=True):
                     if line and line.startswith('data: '):
                         try:
+                            # 将 JSON 数据转换为字符串
+                            data_str = line[6:]
+                            yield data_str
                             yield json.loads(line[6:])
                         except json.JSONDecodeError:
                             continue
@@ -54,6 +49,3 @@ def read_data():
                 self.open_connection()
                 yield None
                 continue
-
-        if results:
-            yield results.pop(0)
