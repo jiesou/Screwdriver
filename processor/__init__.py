@@ -5,7 +5,7 @@ import traceback
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
-from .imu import ImuAPI
+from .imu import API
 from .current import CurrentAPI
 
 
@@ -48,23 +48,23 @@ class ProcessorAPI:
     finished_products = 0
 
     def __init__(self):
-        self.imu_api = ImuAPI()
+        self.imu_api = API()
         self.current_api = CurrentAPI()
         self.imu_data = None
         self.current_data = None
 
         def get_imu_data(self):
             try:
-                for imu_data in self.imu_api.handle_start():
-                    self.imu_data = imu_data
+                for data in self.imu_api.handle_start():
+                    self.imu_data = data
             except Exception as e:
                 print("[IMU] 线程故障", e)
                 traceback.print_exc()
 
         def get_current_data(self):
             try:
-                for current_data in self.current_api.handle_start():
-                    self.current_data = current_data
+                for data in self.current_api.handle_start():
+                    self.current_data = data
             except Exception as e:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
