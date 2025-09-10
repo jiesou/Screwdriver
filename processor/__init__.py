@@ -15,7 +15,7 @@ class ScrewMap:
 
     def filter_screws_in_range(self, position):
         filtered_map = []
-        unfinished_screws = [screw for screw in self.screws if screw["status"] != "已完成"]
+        unfinished_screws = [screw for screw in self.screws if screw.get("status", "等待中") != "已完成"]
         for screw in unfinished_screws:
             space_distance = np.sqrt(
                 (position[0] - screw['position']['x'])**2 +
