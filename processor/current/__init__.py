@@ -14,7 +14,8 @@ class CurrentProcessor:
             if data is None:
                 yield None
                 continue
-            if 'frequency' not in data or 'btn_pressed' not in data:
+            frequency = data.get('frequency')
+            if frequency is None:
                 yield None
                 continue
             frequency = float(data.get('frequency', 0))

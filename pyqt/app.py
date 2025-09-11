@@ -18,6 +18,7 @@ class App(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("螺丝管理系统")
+        self.showFullScreen()
         
         # 创建主容器
         main_widget = QWidget()

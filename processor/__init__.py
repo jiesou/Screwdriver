@@ -63,8 +63,13 @@ class ProcessorAPI:
         def get_imu_data(self):
             try:
                 for data in self.imu_api.handle_start():
-                    if data is not None:
-                        self.imu_data = data
+                    if data is None:
+                        self.imu_data = {
+                            "connected_fine": False,
+                            "position": [0, 0, 0]
+                        }
+                        continue
+                    self.imu_data = data
             except Exception as e:
                 print("[IMU] 线程故障", e)
                 traceback.print_exc()
@@ -72,8 +77,13 @@ class ProcessorAPI:
         def get_current_data(self):
             try:
                 for data in self.current_api.handle_start():
-                    if data is not None:
-                        self.current_data = data
+                    if data is None:
+                        self.current_data = {
+                            "connected_fine": False,
+                            "is_working": False
+                        }
+                        continue
+                    self.current_data = data
             except Exception as e:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
