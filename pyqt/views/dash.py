@@ -24,9 +24,9 @@ class DashView(QWidget):
         btn_layout.addWidget(csv_reader)
         
         # 在按钮布局中添加学习模式按钮
-        learn_btn = QPushButton("学习模式（WIP）")
-        learn_btn.clicked.connect(self.open_learn_dialog)
-        btn_layout.addWidget(learn_btn)
+        # learn_btn = QPushButton("学习模式（WIP）")
+        # learn_btn.clicked.connect(self.open_learn_dialog)
+        # btn_layout.addWidget(learn_btn)
         
         left_layout.addLayout(btn_layout)
         
