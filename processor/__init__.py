@@ -3,11 +3,13 @@ import threading
 import time
 import traceback
 from collections.abc import Generator
+from turtle import pos
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
 from .imu import API as ImuAPI
 from .current import API as CurrentAPI
+from .encoder import API as EncoderAPI
 from pyqt.units.types import Position, State, Screw, SensorConnection
 
 
@@ -52,6 +54,7 @@ class ProcessorAPI:
     def __init__(self):
         self.imu_api = ImuAPI()
         self.current_api = CurrentAPI()
+        self.encoder_api = EncoderAPI()
         self.imu_data = {
             "connected_fine": False,
             "position": [0, 0, 0]
@@ -59,6 +62,10 @@ class ProcessorAPI:
         self.current_data = {
             "connected_fine": False,
             "is_working": False
+        }
+        self.encoder_data = {
+            "connected_fine": False,
+            "line_length": 1,
         }
 
         def get_imu_data(self):
@@ -74,7 +81,6 @@ class ProcessorAPI:
             except Exception as e:
                 print("[IMU] 线程故障", e)
                 traceback.print_exc()
-
         def get_current_data(self):
             try:
                 for data in self.current_api.handle_start():
@@ -88,17 +94,50 @@ class ProcessorAPI:
             except Exception as e:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
+        def get_encoder_data(self):
+            try:
+                for data in self.encoder_api.handle_start():
+                    if data is None:
+                        self.encoder_data = {
+                            "connected_fine": False,
+                            "line_length": 1,
+                        }
+                        continue
+                    self.encoder_data = data
+            except Exception as e:
+                print("[Encoder] 线程故障", e)
+                traceback.print_exc()
 
         imu_thread = threading.Thread(target=get_imu_data, args=(self,), daemon=True)
         current_thread = threading.Thread(target=get_current_data, args=(self,), daemon=True)
+        encoder_thread = threading.Thread(target=get_encoder_data, args=(self,), daemon=True)
 
         imu_thread.start()
         current_thread.start()
+        encoder_thread.start()
         print("======Processor Threads started======")
 
     def set_screws(self, screws: list[Screw]) -> None:
         self.screw_map: ScrewMap = ScrewMap(screws)
         self.current_screw_map = copy.deepcopy(self.screw_map)
+    
+    def compute_position(self) -> list[float]:
+        # 使用 encoder 的线长数据和 imu 的角度数据进行融合计算
+        line_length = self.encoder_data.get("line_length", 1)
+        imu_angle = self.imu_data.get("angle", {'x':0,'y':0,'z':0})
+
+        print("Line Length:", line_length)
+        print("IMU Angle Z:", imu_angle['z'])
+
+        # 极坐标计算：x = r * cos(θ), y = r * sin(θ)
+        # IMU angle Z 是欧拉角（度数），转换为弧度
+        r = line_length
+        theta_deg = imu_angle['z']
+        theta = np.radians(theta_deg)
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+
+        return [x, y]
 
     def requirement_analyze(self) -> State:
         # 在 current_data["is_working"] 为 True 时，屏蔽掉 position 的更新（振动导致 imu 检测不准）
@@ -122,7 +161,7 @@ class ProcessorAPI:
         #         ]
         #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
 
-        position = self.imu_api.processor.positions[-1]
+        position = self.compute_position()
         located_screw = self.current_screw_map.locate_closest_screw(
             position,
             self.current_screw_map.filter_screws_in_range(position)
