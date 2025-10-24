@@ -1,21 +1,22 @@
 import copy, os
-from re import A
 import threading
 import time
 import traceback
+from collections.abc import Generator
 import numpy as np
 from dotenv import load_dotenv
 load_dotenv()
 from .imu import API as ImuAPI
 from .current import API as CurrentAPI
+from pyqt.units.types import State, Screw, SensorConnection
 
 
 class ScrewMap:
-    def __init__(self, screws):
-        self.screws = screws.copy()
+    def __init__(self, screws: list[Screw]) -> None:
+        self.screws: list[Screw] = screws.copy()
 
-    def filter_screws_in_range(self, position):
-        filtered_map = []
+    def filter_screws_in_range(self, position: list[float]) -> list[Screw]:
+        filtered_map: list[Screw] = []
         unfinished_screws = [screw for screw in self.screws if screw.get("status", "等待中") != "已完成"]
         for screw in unfinished_screws:
             space_distance = np.sqrt(
@@ -26,9 +27,9 @@ class ScrewMap:
                 filtered_map.append(screw)
         return filtered_map
 
-    def locate_closest_screw(self, position, ranged_screws):
+    def locate_closest_screw(self, position: list[float], ranged_screws: list[Screw]) -> Screw | None:
         current_min_distance = float('inf')
-        current_closest_screw = None
+        current_closest_screw: Screw | None = None
         for screw in ranged_screws:
             space_distance = np.sqrt(
                 (position[0] - screw['position']['x'])**2 +
@@ -40,7 +41,7 @@ class ScrewMap:
                 current_closest_screw = screw
         return current_closest_screw
 
-    def remove_screw(self, screw):
+    def remove_screw(self, screw: Screw) -> None:
         print("removed", screw)
         self.screws.remove(screw)
 
@@ -88,18 +89,18 @@ class ProcessorAPI:
                 print("[Current] 线程故障", e)
                 traceback.print_exc()
 
-        imu_thread = threading.Thread(target=get_imu_data, args=(self,))
-        current_thread = threading.Thread(target=get_current_data, args=(self,))
+        imu_thread = threading.Thread(target=get_imu_data, args=(self,), daemon=True)
+        current_thread = threading.Thread(target=get_current_data, args=(self,), daemon=True)
 
         imu_thread.start()
         current_thread.start()
         print("======Processor Threads started======")
 
-    def set_screws(self, screws):
+    def set_screws(self, screws: list[Screw]) -> None:
         self.screw_map: ScrewMap = ScrewMap(screws)
         self.current_screw_map = copy.deepcopy(self.screw_map)
 
-    def requirement_analyze(self):
+    def requirement_analyze(self) -> State:
         # 在 current_data["is_working"] 为 True 时，屏蔽掉 position 的更新（振动导致 imu 检测不准）
         # if self.current_data["is_working"]:
         #     for pos in self.imu_api.imu_processor.positions:
@@ -120,7 +121,7 @@ class ProcessorAPI:
         #             self.imu_api.imu_processor.positions[1]
         #         ]
         #         self.imu_api.imu_processor.standing = self.imu_api.imu_processor.positions[-1]
-                
+
         position = self.imu_api.processor.positions[-1]
         located_screw = self.current_screw_map.locate_closest_screw(
             position,
@@ -153,20 +154,20 @@ class ProcessorAPI:
                 self.current_data["is_working"] = False
 
         # 返回分析结果
-        return {
-            "position": position,
-            "located_screw": located_screw,
-            "is_screw_tightening": self.current_data["is_working"] if self.current_data is not None else False,
-            "screw_count": len(self.current_screw_map.screws) - completed_count,
-            "screws": self.current_screw_map.screws,
-            "products_finished": self.finished_products,
-            "sensor_connection": {
-                "imu": self.imu_data["connected_fine"] if self.imu_data is not None else False,
-                "current": self.current_data["connected_fine"] if self.current_data is not None else False
-            }
-        }
+        return State(
+            position=position,
+            located_screw=located_screw,
+            is_screw_tightening=self.current_data["is_working"] if self.current_data is not None else False,
+            screw_count=len(self.current_screw_map.screws) - completed_count,
+            screws=self.current_screw_map.screws,
+            products_finished=self.finished_products,
+            sensor_connection=SensorConnection(
+                imu=self.imu_data["connected_fine"] if self.imu_data is not None else False,
+                current=self.current_data["connected_fine"] if self.current_data is not None else False
+            )
+        )
 
-    def handle_start_moving(self):
+    def handle_start_moving(self) -> Generator[State]:
         print("======Processor Stream started======")
         while True:
             data_snippet = self.requirement_analyze()

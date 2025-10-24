@@ -1,13 +1,13 @@
-from sre_parse import State
 from PyQt6.QtWidgets import (QWidget, QTableWidget, QTableWidgetItem,
                              QHeaderView, QVBoxLayout, QHBoxLayout, QPushButton,
                              QApplication, QDoubleSpinBox)
 from PyQt6.QtGui import QColor
 from PyQt6.QtCore import Qt
 
-from pyqt.units.types import StateDict
+from pyqt.units.types import State
 
 from ..units.state_bus import state_bus
+from ..units.types import State
 from ..units.stored_config import stored_config
 import copy
 
@@ -60,7 +60,7 @@ class ScrewTable(QWidget):
         self.add_button.clicked.connect(self.add_row)
         self.delete_button.clicked.connect(self.delete_selected_rows)
 
-    def update_state(self, state: StateDict):
+    def update_state(self, state: State):
         """Populate table from incoming state. This is programmatic and must
         not trigger persisting back to the state bus.
         """
@@ -237,11 +237,10 @@ class ScrewTable(QWidget):
         self._update_screws(screws)
     
     def _update_screws(self, screws):
-        """processor_api 是不跟随 state_bus 更新的（独立维护 status），所以需要手动同步
-        同时持久化到 stored_config
         """
-        state_bus.processor_api.set_screws(screws)
-        # 只更新 screws 字段，不影响其他字段
-        state_bus.state = {'screws': screws}
+        持久化到 stored_config 的初始螺丝列表，
+        同时同步 live 的 state_bus
+        """
+        # state_bus.state = {'screws': screws, **state_bus.state}
         # 持久存储到配置文件
         stored_config['init_screws'] = copy.deepcopy(screws)

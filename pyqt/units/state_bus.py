@@ -1,14 +1,12 @@
-import threading
-from typing import Dict
-from .types import StateDict, PartialState, Screw, Position, ConfigUpdate
+from .types import State, ConfigData
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
 
 from processor import ProcessorAPI
 from .stored_config import stored_config
 
 class ProcessorStateThread(QThread):
-    # 定义信号
-    updated: pyqtSignal = pyqtSignal(dict)
+    # 定义信号，传递 State
+    updated: pyqtSignal = pyqtSignal(State)
 
     def __init__(self, processor_api: ProcessorAPI) -> None:
         super().__init__()
@@ -19,15 +17,9 @@ class ProcessorStateThread(QThread):
             self.updated.emit(data_snippet)
 
 class StateBus(QObject):
-    updated: pyqtSignal = pyqtSignal(dict)
+    updated: pyqtSignal = pyqtSignal(State)
 
-    # 使用 StateDict 作为静态类型，运行时仍然用普通 dict 保持兼容
-    _state: StateDict = {
-        'position': [0, 0],
-        'screws': [],
-        'is_screw_tightening': False,
-        'screw_count': 0
-    }
+    _state: State = State()
 
     processor_api: ProcessorAPI = ProcessorAPI()
 
@@ -46,28 +38,31 @@ class StateBus(QObject):
 
         stored_config.updated.connect(self.update_config)
 
-    def update_config(self, updated_config: ConfigUpdate) -> None:
-        if 'init_screws' in updated_config:
-            self.processor_api.set_screws(updated_config['init_screws'])
-
-        if 'imu_vertical_h' in updated_config:
-            self.processor_api.imu_api.processor.h = updated_config['imu_vertical_h']
-
-        if 'imu_center_point_x' in updated_config or 'imu_center_point_y' in updated_config:
-            x = updated_config.get('imu_center_point_x', stored_config['imu_center_point_x'])
-            y = updated_config.get('imu_center_point_y', stored_config['imu_center_point_y'])
-            self.processor_api.imu_api.processor.center_point = (x, y)
+    def update_config(self, config_data: ConfigData) -> None:
+        """处理配置更新，接收完整的 ConfigData"""
+        # 更新螺丝配置
+        self.processor_api.set_screws(config_data.init_screws)
+        
+        # 更新 IMU 垂直高度
+        self.processor_api.imu_api.processor.h = config_data.imu_vertical_h
+        
+        # 更新 IMU 中心点
+        self.processor_api.imu_api.processor.center_point = (
+            config_data.imu_center_point_x,
+            config_data.imu_center_point_y
+        )
 
     @property
-    def state(self) -> StateDict:
+    def state(self) -> State:
         return self._state
 
     @state.setter
-    def state(self, new_state: PartialState) -> None:
-        """接受部分更新 PartialState 或普通 dict，向后兼容老的写法。"""
-        # 保持运行时兼容：把 TypedDict 当作普通 dict 来更新
-        self._state.update(new_state)  # type: ignore[arg-type]
-        self.updated.emit(new_state)  # 发出实际更新的片段
+    def state(self, new_state: State) -> None:
+        """接受 State 更新状态，同时发送更新信号。"""
+        # 先更新内部状态
+        self._state = new_state
+        # 发出完整的分析结果
+        self.updated.emit(self._state)
 
 # 全局单例
 state_bus: StateBus = StateBus()

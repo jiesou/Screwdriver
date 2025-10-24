@@ -1,3 +1,4 @@
+from ..units.types import State
 from PyQt6.QtWidgets import QWidget, QHBoxLayout, QLabel
 from PyQt6.QtCore import Qt
 
@@ -32,9 +33,6 @@ class ScrewCounter(QWidget):
         layout.addWidget(QLabel("已完成产品"))
         layout.addWidget(self.products_finished)
         
-    def update_count(self, state):
-        # 支持部分更新
-        if 'screw_count' in state:
-            self.screws_left.setText(str(state['screw_count']))
-        if 'products_finished' in state:
-            self.products_finished.setText(str(state['products_finished']))
+    def update_count(self, state: State):
+        self.screws_left.setText(str(state.screw_count))
+        self.products_finished.setText(str(state.products_finished))

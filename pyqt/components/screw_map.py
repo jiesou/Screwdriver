@@ -74,9 +74,8 @@ class ScrewMap(QWidget):
         self.update_plot()
     
     def update_config(self, updated_config):
-        if 'map_physics_width' in updated_config:
-            self.plot_widget.setXRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
-            self.plot_widget.setYRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
+        self.plot_widget.setXRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
+        self.plot_widget.setYRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
         
     def update_plot(self):
         # 获取当前视图的像素比例

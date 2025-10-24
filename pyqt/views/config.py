@@ -1,14 +1,13 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QFormLayout, QDoubleSpinBox, 
                             QLabel, QLineEdit, QCheckBox, QTabWidget)
-from PyQt6.QtCore import QSignalBlocker
 
-from ..units.state_bus import state_bus
+from pyqt.units.types import ConfigData
 from ..units.stored_config import stored_config
 
 class ConfigView(QWidget):
     def __init__(self):
         super().__init__()
-        self.spinboxes = {}
+        self.spinboxes: dict[str, QDoubleSpinBox] = {}
         stored_config.updated.connect(self.update_stored_config)
 
         layout = QVBoxLayout(self)
@@ -37,7 +36,7 @@ class ConfigView(QWidget):
             return spinbox
 
         # 添加物理参数配置
-        setup_spinbox(1.0, 100.0, 0.1, 'map_physics_width', "物理地图宽度(米)", physics_layout)
+        setup_spinbox(1.0, 100.0, 0.1, 'map_physics_width', "地图视图宽度(米)", physics_layout)
         setup_spinbox(-8.0, 8.0, 0.05, 'imu_center_point_x', "垂直参考中心X偏移(米)", physics_layout)
         setup_spinbox(-8.0, 8.0, 0.05, 'imu_center_point_y', "垂直参考中心Y偏移(米)", physics_layout)
         setup_spinbox(0.05, 3.0, 0.05, 'imu_vertical_h', "位置单元垂直距离(米)", physics_layout)
@@ -79,7 +78,7 @@ class ConfigView(QWidget):
         
         layout.addWidget(tab_widget)
 
-    def update_stored_config(self, updated_config):
+    def update_stored_config(self, updated_config: ConfigData):
         for key, value in updated_config.items():
             if key in self.spinboxes:
                 self.spinboxes[key].setValue(value)
