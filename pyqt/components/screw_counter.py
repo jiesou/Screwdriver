@@ -33,5 +33,8 @@ class ScrewCounter(QWidget):
         layout.addWidget(self.products_finished)
         
     def update_count(self, state):
-        self.screws_left.setText(str(state['screw_count']))
-        self.products_finished.setText(str(state['products_finished']))
+        # 支持部分更新
+        if 'screw_count' in state:
+            self.screws_left.setText(str(state['screw_count']))
+        if 'products_finished' in state:
+            self.products_finished.setText(str(state['products_finished']))
