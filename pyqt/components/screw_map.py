@@ -3,6 +3,8 @@ from PyQt6.QtCore import Qt
 import pyqtgraph as pg
 import numpy as np
 
+from pyqt.units.types import State
+
 from ..units.stored_config import stored_config
 
 class ScrewMap(QWidget):
@@ -68,9 +70,9 @@ class ScrewMap(QWidget):
         self.rotation_angle = (self.rotation_angle + 90) % 360
         self.update_plot()
         
-    def update_state(self, state):
-        self.screws = state.get('screws', [])
-        self.position = state.get('position', None)
+    def update_state(self, state: State):
+        self.screws = state.screws
+        self.position = state.position
         self.update_plot()
     
     def update_config(self, updated_config):
@@ -121,7 +123,7 @@ class ScrewMap(QWidget):
         
         # 更新当前位置
         if self.position:
-            x, y = self.position[0], self.position[1]
+            x, y = self.position['x'], self.position['y']
             
             # 同样处理旋转
             if self.rotation_angle == 90:

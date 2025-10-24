@@ -19,7 +19,7 @@ class SensorConnection(TypedDict):
 
 @dataclass
 class State:
-    position: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    position: Position = field(default_factory=lambda: {"x": 0.0, "y": 0.0})
     located_screw: Optional[Screw] = None
     is_screw_tightening: bool = False
     screw_count: int = 0

@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from .imu import API as ImuAPI
 from .current import API as CurrentAPI
-from pyqt.units.types import State, Screw, SensorConnection
+from pyqt.units.types import Position, State, Screw, SensorConnection
 
 
 class ScrewMap:
@@ -155,7 +155,7 @@ class ProcessorAPI:
 
         # 返回分析结果
         return State(
-            position=position,
+            position=Position(x=position[0], y=position[1]),
             located_screw=located_screw,
             is_screw_tightening=self.current_data["is_working"] if self.current_data is not None else False,
             screw_count=len(self.current_screw_map.screws) - completed_count,

@@ -222,10 +222,8 @@ class ScrewTable(QWidget):
         self._update_screws(screws)
 
     def delete_selected_rows(self):
-        print("Deleting selected rows")
         # 支持用户只选中单元格的情况：收集所有被选中单元格对应的行索引并去重
         rows = sorted({idx.row() for idx in self.table.selectionModel().selectedIndexes()}, reverse=True)
-        print("Deleting rows:", rows)
         if not rows:
             return
         screws = state_bus.state.get('screws', []).copy()
@@ -235,6 +233,7 @@ class ScrewTable(QWidget):
         # 暂时转移焦点，使 update_state 可以执行表格更新
         self.add_button.setFocus()
         self._update_screws(screws)
+        self.delete_button.hide()  # 删除后隐藏按钮
     
     def _update_screws(self, screws):
         """

@@ -1,8 +1,11 @@
+from turtle import position
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QPushButton, 
                            QVBoxLayout, QHBoxLayout, QLabel)
 from PyQt6.QtCore import Qt, QEvent
 
 import json, os
+
+from pyqt.units.types import State
 
 from .views.dash import DashView
 from .views.config import ConfigView
@@ -46,11 +49,11 @@ class App(QMainWindow):
         self.position_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.position_label.setStyleSheet("color: green; font-size: 18px")
         state_bus.updated.connect(
-            lambda data: self.position_label.setText(
-                f"X: {data['position'][0]*100:.1f} cm Y: {data['position'][1]*100:.1f} cm {'拧螺丝中' if data.get('is_screw_tightening') else '未拧螺丝'} "
-                f"连接状态：IMU {'已连接' if data['sensor_connection']['imu'] else '未连接'}；"
-                f"电流  {'已连接' if data['sensor_connection']['current'] else '未连接'}"
-            ) if data.get('position') else None
+            lambda state: self.position_label.setText(
+                f"X: {state.position['x']*100:.1f} cm Y: {state.position['y']*100:.1f} cm {'拧螺丝中' if state.is_screw_tightening else '未拧螺丝'} "
+                f"连接状态：IMU {'已连接' if state.sensor_connection['imu'] else '未连接'}；"
+                f"电流  {'已连接' if state.sensor_connection['current'] else '未连接'}"
+            ) if state.position else None
         )
         
         toolbar_layout.addStretch()
@@ -70,11 +73,10 @@ class App(QMainWindow):
         
 
     def reset_desktop(self):
-        if 'position' in state_bus.state:
-            x, y = state_bus.state['position']
-            # 直接更新配置
-            stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - x)
-            stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - y)
+        position = state_bus.state.position
+        # 直接更新配置
+        stored_config['imu_center_point_x'] = float(stored_config['imu_center_point_x'] - position['x'])
+        stored_config['imu_center_point_y'] = float(stored_config['imu_center_point_y'] - position['y'])
     
     def closeEvent(self, event):
         os._exit(0)
