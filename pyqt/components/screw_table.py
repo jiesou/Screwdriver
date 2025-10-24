@@ -9,6 +9,7 @@ from pyqt.units.types import StateDict
 
 from ..units.state_bus import state_bus
 from ..units.stored_config import stored_config
+import copy
 
 
 class ScrewTable(QWidget):
@@ -236,7 +237,11 @@ class ScrewTable(QWidget):
         self._update_screws(screws)
     
     def _update_screws(self, screws):
-        """processor_api 是不跟随 state_bus 更新的（独立维护 status），所以需要手动同步"""
+        """processor_api 是不跟随 state_bus 更新的（独立维护 status），所以需要手动同步
+        同时持久化到 stored_config
+        """
         state_bus.processor_api.set_screws(screws)
         # 只更新 screws 字段，不影响其他字段
         state_bus.state = {'screws': screws}
+        # 持久存储到配置文件
+        stored_config['init_screws'] = copy.deepcopy(screws)
