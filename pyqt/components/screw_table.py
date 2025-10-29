@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QTableWidget, QTableWidgetItem,
                              QHeaderView, QVBoxLayout, QHBoxLayout, QPushButton,
-                             QApplication, QDoubleSpinBox)
+                             QApplication, QDoubleSpinBox, QAbstractItemView)
 from PyQt6.QtGui import QColor
 from PyQt6.QtCore import Qt
 
@@ -61,13 +61,19 @@ class ScrewTable(QWidget):
         self.delete_button.clicked.connect(self.delete_selected_rows)
 
     def update_state(self, state: State):
-        """Populate table from incoming state. This is programmatic and must
-        not trigger persisting back to the state bus.
+        """
+        从传入状态填充表。这是编程性的，不得触发 state_bus 的持久化
         """
         # 避免在用户正在编辑时覆盖输入
         focus_widget = QApplication.focusWidget()
-        if focus_widget is not None and (focus_widget is self.table or self.table.isAncestorOf(focus_widget)):
+        # 判断用户是否正在编辑表格，避免刷新时打断输入
+        if self.table.state() == QAbstractItemView.State.EditingState:
             return
+        if focus_widget is not None and (focus_widget is self.table or self.table.isAncestorOf(focus_widget)):
+            if isinstance(focus_widget, QDoubleSpinBox):
+                return
+            if self.table.selectionModel().hasSelection():
+                return
 
         screws = state.get('screws', [])
 
@@ -131,7 +137,8 @@ class ScrewTable(QWidget):
         self.table.blockSignals(False)
 
     def on_spinbox_changed(self, value_cm: float):
-        """处理嵌入 SpinBox 的值变化，value_cm 是以 cm 为单位的浮点数。
+        """
+        处理嵌入 SpinBox 的值变化，value_cm 是以 cm 为单位的浮点数。
         将 cm 转换为 m 并持久化。
         """
         sender = self.sender()
