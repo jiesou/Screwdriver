@@ -15,7 +15,9 @@ from pyqt.units.types import Position, State, Screw, SensorConnection
 
 class ScrewMap:
     def __init__(self, screws: list[Screw]) -> None:
-        self.screws: list[Screw] = screws.copy()
+        self.screws: list[Screw] = copy.deepcopy(screws)
+        for screw in self.screws:
+            screw.pop("status", None)
 
     def filter_screws_in_range(self, position: list[float]) -> list[Screw]:
         filtered_map: list[Screw] = []
@@ -173,6 +175,7 @@ class ProcessorAPI:
             if screw["status"] == "已完成":
                 completed_count += 1
                 if completed_count >= len(self.current_screw_map.screws):
+                    # 一个产品完成了
                     # 防止“拧紧螺丝状态”继承到下一个产品，而直接将同位螺丝拧下
                     self.current_api.processor.is_working = False
                     self.current_api.processor.appliance_on = True

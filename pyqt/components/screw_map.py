@@ -47,12 +47,13 @@ class ScrewMap(QWidget):
         self.plot_widget.showGrid(True, True)
         # 获取 ViewBox 并设置缩放限制
         self.plot_widget.getViewBox().setLimits(
-            minXRange=0.5,  # 最大放大倍数
-            minYRange=0.5,  # 最大放大倍数
+            minXRange=0.2,  # 最大放大倍数
+            minYRange=0.2,  # 最大放大倍数
         )
         
         # 创建散点图项
-        self.screw_scatter = pg.ScatterPlotItem()
+        # pxMode=False 让点尺寸按物理坐标缩放，避免为保持像素尺寸而生成超大图形
+        self.screw_scatter = pg.ScatterPlotItem(pxMode=False)
         self.position_scatter = pg.ScatterPlotItem(size=8, pen=pg.mkPen(None), brush=pg.mkBrush(255, 0, 0))
         
         self.plot_widget.addItem(self.screw_scatter)
@@ -80,11 +81,6 @@ class ScrewMap(QWidget):
         self.plot_widget.setYRange(-updated_config['map_physics_width']/2, updated_config['map_physics_width']/2)
         
     def update_plot(self):
-        # 获取当前视图的像素比例
-        view_box = self.plot_widget.getViewBox()
-        screen_size = view_box.viewPixelSize()
-        pixel_scale = (screen_size[0] + screen_size[1]) / 2  # 取平均作为比例因子
-        
         # 更新螺丝位置
         spots = []
         for screw in self.screws:
@@ -93,8 +89,8 @@ class ScrewMap(QWidget):
                 '已完成': (0, 255, 0)
             }.get(screw['status'], (0, 0, 255))
             
-            # 根据当前视图比例调整 size
-            display_size = screw['position']['allowOffset'] * 2 / pixel_scale
+            # pxMode=False 时 size 直接使用物理尺寸
+            display_size = screw['position']['allowOffset'] * 2
             
             x, y = screw['position']['x'], screw['position']['y']
             
@@ -112,7 +108,7 @@ class ScrewMap(QWidget):
             
             spots.append({
                 'pos': (x, y),
-                'size': display_size,  # 使用调整后的大小
+                'size': display_size,  # 使用物理尺寸
                 'pen': None,
                 'brush': pg.mkBrush(*color, 90),  # 50是透明度
                 'symbol': 'o',

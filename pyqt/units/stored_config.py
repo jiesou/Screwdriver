@@ -1,6 +1,7 @@
 from PyQt6.QtCore import QObject, QSettings, pyqtSignal
 from .types import ConfigData
 from dataclasses import asdict, fields
+import copy
 import os
 
 
@@ -30,6 +31,10 @@ class Config(QObject):
     def get(self, key: str, default=None):
         return getattr(self._config_data, key, default)
     def __setitem__(self, key: str, value):
+        if key == 'init_screws':
+            value = copy.deepcopy(value)
+            for screw in value:
+                screw.pop('status', None)
         setattr(self._config_data, key, value)
         self.settings.setValue(key, value)
         self.settings.sync()
