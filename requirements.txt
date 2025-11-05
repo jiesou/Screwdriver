@@ -1,8 +1,8 @@
 pyserial
 numpy
-gatt
-dbus-python
-PyGObject
+# gatt
+# dbus-python
+# PyGObject
 quart
 quart_cors
 requests
