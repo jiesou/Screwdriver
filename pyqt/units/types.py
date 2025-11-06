@@ -16,6 +16,7 @@ class Screw(TypedDict, total=False):
 class SensorConnection(TypedDict):
     imu: bool = False
     current: bool = False
+    encoder: bool = False
 
 @dataclass
 class State:

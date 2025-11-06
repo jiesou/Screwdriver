@@ -10,10 +10,10 @@ class EncoderProcessor:
             if data is None:
                 yield None
                 continue
-            line_length = data
+            encoder_value = data
             yield {
                 "connected_fine": True,
-                "line_length": line_length,
+                "encoder_value": encoder_value,
             }
 
 

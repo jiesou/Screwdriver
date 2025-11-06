@@ -51,9 +51,10 @@ class App(QMainWindow):
         state_bus.updated.connect(
             lambda state: self.position_label.setText(
                 f"X: {state.position['x']*100:.1f} cm Y: {state.position['y']*100:.1f} cm {'拧螺丝中' if state.is_screw_tightening else '未拧螺丝'} "
-                f"连接状态：IMU {'已连接' if state.sensor_connection['imu'] else '未连接'}；"
-                f"电流  {'已连接' if state.sensor_connection['current'] else '未连接'}"
-            ) if state.position else None
+                f"连接状态：IMU {'✔️' if state.sensor_connection['imu'] else '❌'}；"
+                f"电流  {'✔️' if state.sensor_connection['current'] else '❌'}；"
+                f"编码器 {'✔️' if state.sensor_connection['encoder'] else '❌'}"
+            )
         )
         
         toolbar_layout.addStretch()

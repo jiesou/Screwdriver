@@ -63,7 +63,7 @@ def read_encoder_value(ser, slave_id=0x01):
     return encoder_value
 
 
-def read_data(port="/dev/ttyUSB0", baudrate=9600, slave_id=0x01, timeout=1, interval=0.1):
+def read_data(port="/dev/ttyUSB1", baudrate=9600, slave_id=0x01, timeout=1, interval=0.1):
     """
     持续读取拉线编码器的值
     
@@ -97,7 +97,7 @@ def read_data(port="/dev/ttyUSB0", baudrate=9600, slave_id=0x01, timeout=1, inte
 
 if __name__ == "__main__":
     # 使用示例
-    for value in read_data(port="/dev/ttyUSB0", baudrate=9600, slave_id=0x01, interval=0.1):
+    for value in read_data():
         if value is not None:
             print(f"编码器值: {value}")
         else:

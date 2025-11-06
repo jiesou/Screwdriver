@@ -125,11 +125,12 @@ class ProcessorAPI:
     
     def compute_position(self) -> list[float]:
         # 使用 encoder 的线长数据和 imu 的角度数据进行融合计算
-        line_length = self.encoder_data.get("line_length", 1)
+        line_length = self.encoder_data.get(
+            "encoder_value", 10) * 0.0001  # encoder_value 转换为米
         imu_angle = self.imu_data.get("angle", {'x':0,'y':0,'z':0})
 
-        print("Line Length:", line_length)
-        print("IMU Angle Z:", imu_angle['z'])
+        # print("Line Length:", line_length)
+        # print("IMU Angle Z:", imu_angle['z'])
 
         # 极坐标计算：x = r * cos(θ), y = r * sin(θ)
         # IMU angle Z 是欧拉角（度数），转换为弧度
@@ -205,7 +206,8 @@ class ProcessorAPI:
             products_finished=self.finished_products,
             sensor_connection=SensorConnection(
                 imu=self.imu_data["connected_fine"] if self.imu_data is not None else False,
-                current=self.current_data["connected_fine"] if self.current_data is not None else False
+                current=self.current_data["connected_fine"] if self.current_data is not None else False,
+                encoder=self.encoder_data["connected_fine"] if self.encoder_data is not None else False
             )
         )
 
